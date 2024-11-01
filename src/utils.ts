@@ -6,6 +6,11 @@ import { AudioUnit } from "./core/AudioEditor";
 export const mod = (x: number, y: number) => (x % y + y) % y;
 
 /**
+ * Round a number to multiple of another
+ */
+export const round = (x: number, to: number) => (Math.abs(to) < 1 ? Math.round(x * (1 / to)) / (1 / to) : Math.round(x / to) * to);
+
+/**
  * Linear amplitude ([0, 1]) to dB ([-Inf, 0])
  *
  * @param a linear amplitude value

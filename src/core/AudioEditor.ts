@@ -11,23 +11,6 @@ export type {
 
 export type AudioPlayingState = "stopped" | "paused" | "playing";
 
-export interface AudioEditorEventMap {
-    "viewRange": [number, number];
-    "selRange": [number, number] | null;
-    "selRangeToPlay": [number, number] | null;
-    "playhead": number;
-    "state": AudioEditorState;
-    "playing": AudioPlayingState;
-    "monitoring": boolean;
-    "loop": boolean;
-    "recording": boolean;
-    "uiResized": never;
-    "setAudio": never;
-    "ready": never;
-    "configuration": AudioEditorConfiguration;
-    "playerStateUpdated": Partial<AudioEditorState>;
-}
-
 export interface AudioEditorState {
     isReady: boolean;
     playing: AudioPlayingState;
@@ -37,11 +20,20 @@ export interface AudioEditorState {
     playhead: number;
     selRange: [number, number] | null;
     viewRange: [number, number];
+    trackNames: string[];
     trackGains: number[];
     trackMutes: boolean[];
     trackSolos: boolean[];
     trackPans: number[];
     masterGain: number;
+}
+
+export interface AudioEditorEventMap extends Omit<AudioEditorState, "isReady"> {
+    "selRangeToPlay": [number, number] | null;
+    "ready": never;
+    "state": AudioEditorState;
+    "configuration": AudioEditorConfiguration;
+    "playerStateUpdated": Partial<AudioEditorState>;
 }
 
 class AudioEditor extends TypedEventEmitter<AudioEditorEventMap> {
@@ -54,10 +46,10 @@ class AudioEditor extends TypedEventEmitter<AudioEditorEventMap> {
         beatsPerMeasure: 4,
         division: 16
     };
-    static async fromData(audioBuffer: AudioBuffer, context: AudioContext, configuration: Partial<AudioEditorConfiguration> = {}, uri?: string, workspaceUri = location.href) {
+    static async fromData(audioBuffer: AudioBuffer, context: AudioContext, name: string, configuration: Partial<AudioEditorConfiguration> = {}, uri?: string, workspaceUri = location.href) {
         const operableAudioBuffer: OperableAudioBuffer = Object.setPrototypeOf(audioBuffer, OperableAudioBuffer.prototype);
         const timeDomainData = operableAudioBuffer.toArray(true);
-        const audioEditor = new AudioEditor(operableAudioBuffer, timeDomainData, context, { ...this.DEFAULT_CONFIGURATION, ...configuration }, uri, workspaceUri);
+        const audioEditor = new AudioEditor(operableAudioBuffer, timeDomainData, name, context, { ...this.DEFAULT_CONFIGURATION, ...configuration }, uri, workspaceUri);
         await audioEditor.initPlayer();
         // await audioEditor.initModules(state);
         audioEditor.setState({ isReady: true });
@@ -73,12 +65,16 @@ class AudioEditor extends TypedEventEmitter<AudioEditorEventMap> {
         playhead: 0,
         selRange: null,
         viewRange: [0, 0],
+        trackNames: [],
         trackGains: [],
         trackMutes: [],
         trackSolos: [],
         trackPans: [],
         masterGain: 0
     };
+    get name() {
+        return this._name;
+    }
     get length() {
         return this._audioBuffer.length;
     }
@@ -121,6 +117,7 @@ class AudioEditor extends TypedEventEmitter<AudioEditorEventMap> {
     private constructor(
         private _audioBuffer: OperableAudioBuffer,
         private _timeDomainData: Float32Array[],
+        private _name: string,
         private _context: AudioContext,
         private _configuration: AudioEditorConfiguration,
         private _uri: string | undefined,
@@ -139,10 +136,14 @@ class AudioEditor extends TypedEventEmitter<AudioEditorEventMap> {
         this._player = await AudioPlayer.init(this);
     }
     setState(state: Partial<AudioEditorState>) {
+        const oldState = { ...this.state };
         this.state = {
             ...this.state,
             ...state
         };
+        for (const key in state) {
+            if ((state as any)[key] !== (oldState as any)[key]) this.emit(key as any, (state as any)[key]);
+        }
         this.emit("state", this.state);
         if ((["trackGains", "trackSolos", "trackMutes", "trackGains", "masterGain", "loop"] as (keyof AudioEditorState)[]).find(k => k in state)) {
             this.emit("playerStateUpdated", state);
@@ -183,6 +184,11 @@ class AudioEditor extends TypedEventEmitter<AudioEditorEventMap> {
         const end = Math.min(length, Math.max(viewLength, viewEnd + deltaSamples));
         this.setViewRange([start, end]);
         return [start, end] as [number, number];
+    }
+    setGain(channel: number, value: number) {
+        const array = this.state.trackGains.slice();
+        array[channel] = value;
+        this.setState({ trackGains: array });
     }
     setSolo(channel: number, value: boolean) {
         const array = this.state.trackSolos.slice();
@@ -282,8 +288,8 @@ class AudioEditor extends TypedEventEmitter<AudioEditorEventMap> {
         this.emit("playing", playing);
         this.player!.stop();
     }
-    setGain(gain: number) {
-        this.setState({ masterGain: gain });
+    setMasterGain(masterGain: number) {
+        this.setState({ masterGain });
     }
     handlePlayerEnded(playhead: number) {
         const playing: AudioPlayingState = "stopped";

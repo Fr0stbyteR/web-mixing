@@ -22,7 +22,7 @@ const App: React.FunctionComponent<Props> = () => {
     }, []);
     useEffect(() => {
         (async () => {
-            if (!questData) return;
+            if (!quest || !questData) return;
             const { files, path } = questData;
             const audioBuffers = await Promise.all(files.map(async (fileName) => {
                 const url = `${path}/${fileName}`;
@@ -34,7 +34,8 @@ const App: React.FunctionComponent<Props> = () => {
             for (let i = 0; i < audioBuffers.length; i++) {
                 audioBuffer.copyToChannel(audioBuffers[i].getChannelData(0), i);
             }
-            const audioEditor = await AudioEditor.fromData(audioBuffer, audioContext);
+            const audioEditor = await AudioEditor.fromData(audioBuffer, audioContext, quest);
+            audioEditor.setState({ trackNames: files });
             setAudioEditor(audioEditor);
             const handleKeyDown = async (e: KeyboardEvent) => {
                 if (e.key !== " ") return;

@@ -5,9 +5,9 @@ import { AudioEditorConfiguration, AudioEditorState } from "../core/AudioEditor"
 import { VSCodeButton } from "@vscode/webview-ui-toolkit/react";
 import TimeInput from "./TimeInput";
 
-interface Props extends Pick<AudioEditorState, "playing" | "playhead" | "loop"> {
+type Props = Pick<AudioEditorState, "playing" | "playhead" | "loop"> & {
     configuration: AudioEditorConfiguration;
-}
+};
 
 const PlayerContainer: FunctionComponent<Props> = ({ playhead, playing, loop, configuration }) => {
     const audioEditor = useContext(AudioEditorContext)!;

@@ -1,0 +1,17 @@
+.audio-editor-container .arrangement-container {
+    display: flex;
+    flex: 1 1 auto;
+
+    padding-bottom: 40px;
+    --track-control-width: 100px;
+
+    & .arrangement-horizontal-scroller-container {
+        position: absolute;
+        display: flex;
+        flex-direction: column;
+        padding-left: var(--track-control-width);
+        bottom: 0px;
+        height: 30px;
+        width: calc(100% - var(--track-control-width));
+    }
+}

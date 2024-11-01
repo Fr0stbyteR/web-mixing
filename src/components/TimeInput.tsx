@@ -3,12 +3,13 @@ import { FunctionComponent, useCallback, useState } from "react";
 import { AudioEditorConfiguration } from "../core/AudioEditor";
 import { convertSampleToUnit, convertUnitToSample } from "../utils";
 
-interface Props extends Pick<AudioEditorConfiguration, "audioUnit" | "beatsPerMeasure" | "beatsPerMinute" | "division"> {
+type Props = Pick<AudioEditorConfiguration, "audioUnit" | "beatsPerMeasure" | "beatsPerMinute" | "division"> & {
     samples: number;
     sampleRate: number;
     style?: React.CSSProperties;
     onChange?: (samples: number) => any;
-}
+};
+
 const TimeInput: FunctionComponent<Props> = ({ audioUnit, beatsPerMeasure, beatsPerMinute, division, samples, sampleRate, style, onChange }) => {
     const [editing, setEditing] = useState(false);
     const [dragged, setDragged] = useState(false);

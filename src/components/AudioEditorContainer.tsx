@@ -13,6 +13,12 @@ const AudioEditorContainer: React.FunctionComponent = () => {
     const [selRange, setSelRange] = useState(audioEditor.state.selRange);
     const [playing, setPlaying] = useState(audioEditor.state.playing);
     const [loop, setLoop] = useState(audioEditor.state.loop);
+    const [trackNames, setTrackNames] = useState(audioEditor.state.trackNames);
+    const [trackGains, setTrackGains] = useState(audioEditor.state.trackGains);
+    const [trackMutes, setTrackMutes] = useState(audioEditor.state.trackMutes);
+    const [trackSolos, setTrackSolos] = useState(audioEditor.state.trackSolos);
+    const [trackPans, setTrackPans] = useState(audioEditor.state.trackPans);
+    const [masterGain, setMasterGain] = useState(audioEditor.state.masterGain);
     const [windowSize, setWindowSize] = useState([window.innerWidth, window.innerHeight]);
     const phosphorColor = window.getComputedStyle(document.body).getPropertyValue("--vscode-menu-selectionBackground");
     const playheadColor = window.getComputedStyle(document.body).getPropertyValue("--vscode-minimap-findMatchHighlight");
@@ -26,6 +32,12 @@ const AudioEditorContainer: React.FunctionComponent = () => {
         selRange,
         playing,
         loop,
+        trackNames,
+        trackGains,
+        trackMutes,
+        trackSolos,
+        trackPans,
+        masterGain,
         configuration,
         phosphorColor,
         playheadColor,
@@ -47,6 +59,12 @@ const AudioEditorContainer: React.FunctionComponent = () => {
         audioEditor.on("selRange", setSelRange);
         audioEditor.on("playing", setPlaying);
         audioEditor.on("loop", setLoop);
+        audioEditor.on("trackNames", setTrackNames);
+        audioEditor.on("trackGains", setTrackGains);
+        audioEditor.on("trackMutes", setTrackMutes);
+        audioEditor.on("trackSolos", setTrackSolos);
+        audioEditor.on("trackPans", setTrackPans);
+        audioEditor.on("masterGain", setMasterGain);
         window.addEventListener("resize", handleResize);
         return () => {
             audioEditor.off("playhead", setPlayhead);
@@ -54,13 +72,19 @@ const AudioEditorContainer: React.FunctionComponent = () => {
             audioEditor.off("selRange", setSelRange);
             audioEditor.off("playing", setPlaying);
             audioEditor.off("loop", setLoop);
+            audioEditor.off("trackNames", setTrackNames);
+            audioEditor.off("trackGains", setTrackGains);
+            audioEditor.off("trackMutes", setTrackMutes);
+            audioEditor.off("trackSolos", setTrackSolos);
+            audioEditor.off("trackPans", setTrackPans);
+            audioEditor.off("masterGain", setMasterGain);
             window.removeEventListener("resize", handleResize);
         };
     }, [audioEditor, handleResize]);
     return (
         <div id="audio-editor-container" className="audio-editor-container">
             <PlayerContainer {...componentProps} />
-            <ArrangementContainer />
+            <ArrangementContainer {...componentProps} />
             <MixerContainer />
         </div>
     );
