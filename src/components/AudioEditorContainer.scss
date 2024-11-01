@@ -1,0 +1,23 @@
+.audio-editor-container {
+    --visualizer-right-spacing: 80px;
+    --visualizer-configuration-spacing: 200px;
+    --visualizer-monitor-spacing: 200px;
+
+    display: flex;
+    position: relative;
+    flex-direction: column;
+    width: 100%;
+    flex: 0 0 100%;
+
+    & > .audio-editor-left-container {
+        display: flex;
+        position: relative;
+        flex-direction: column;
+        margin: 8px;
+        flex: 1 1 auto;
+    
+        & > :not(:last-child) {
+            margin-bottom: 6px;
+        }
+    }
+}
