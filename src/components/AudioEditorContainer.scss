@@ -20,4 +20,16 @@
             margin-bottom: 6px;
         }
     }
+
+    & > .master-meter-container {
+        flex: 0 0 40px;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+
+        & > .meter-container {
+            position: absolute;
+            width: 100%;
+        }
+    }
 }

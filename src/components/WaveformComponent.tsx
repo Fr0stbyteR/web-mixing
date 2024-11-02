@@ -5,7 +5,7 @@ import { VSCodeButton } from "@vscode/webview-ui-toolkit/react";
 import { setCanvasToFullSize } from "../../utils";
 import { VisualizationOptions } from "../../core/AudioToolkitModule";
 import Waveform from "./Waveform";
-import VectorImageProcessor, { VectorCursorInfo } from "../../core/VectorImageProcessor";
+import VectorImageProcessor, { VectorCursorInfo } from "../core/VectorImageProcessor";
 import ModuleUsingCanvas from "../../components/ModuleUsingCanvas";
 
 const WaveformComponent: FunctionComponent<VisualizationOptions<Waveform>> = (props) => {

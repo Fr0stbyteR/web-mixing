@@ -66,7 +66,7 @@ export default class AudioPlayer {
         const { masterGain, trackGains, trackPans, trackMutes, trackSolos, loop: loopIn } = state;
         if (trackMutes || trackSolos) {
             for (let i = 0; i < this.editor.numberOfChannels; i++) {
-                this.muteGainNodePool[i].gain.setTargetAtTime(dbtoa(this.editor.enabledChannels[i] ? 1 : 0), this.context.currentTime, 0.01);
+                this.muteGainNodePool[i].gain.setTargetAtTime(this.editor.enabledChannels[i] ? 1 : 0, this.context.currentTime, 0.01);
             }
         }
         if (trackGains) {
@@ -163,7 +163,6 @@ export default class AudioPlayer {
         const audioWorklet = this.context.audioWorklet;
         await PeakAnalyserNode.register(audioWorklet);
         this.masterPeakAnalyserNode = new PeakAnalyserNode(this.context);
-        this.masterGainNode.connect(this.masterPeakAnalyserNode);
         for (let i = 0; i < this.editor.numberOfChannels; i++) {
             this.peakAnalyserNodePool[i] = new PeakAnalyserNode(this.context);
             this.gainNodePool[i].connect(this.peakAnalyserNodePool[i]);
@@ -205,6 +204,7 @@ export default class AudioPlayer {
         this.bufferSourceNode = bufferSourceNode;
         bufferSourceNode.buffer = audioBuffer;
         // bufferSourceNode.connect(this.dummyAnalyserNode);
+        this.masterGainNode.connect(this.masterPeakAnalyserNode);
         bufferSourceNode.connect(this.splitterNode);
         bufferSourceNode.loop = !!loop;
         bufferSourceNode.addEventListener("ended", this.handleEnded);
@@ -223,6 +223,9 @@ export default class AudioPlayer {
         this.scheduleUpdateCursor();
     }
     stop() {
+        try {
+            this.masterGainNode.disconnect(this.masterPeakAnalyserNode);
+        } catch (error) { /* empty */ }
         if (!this.bufferSourceNode) return;
         this.bufferSourceNode.stop();
         this.bufferSourceNode.removeEventListener("ended", this.handleEnded);

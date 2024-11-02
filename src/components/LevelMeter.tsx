@@ -7,7 +7,7 @@ import { VisualizationStyleOptions } from "../types";
 type Props = Pick<VisualizationStyleOptions, "gridRulerColor" | "gridColor" | "textColor" | "monospaceFont"> & {
     numberOfChannels: number;
     peakAnalyserNode: PeakAnalyserNode;
-    gain: number;
+    gain?: number;
     showRuler?: boolean;
     onGainChange?: (gain: number) => any;
     frameRate?: number;

@@ -15,11 +15,11 @@ div.meter-container {
     }
 
     &.meter-container-show-ruler {
-        &:first-child {
+        & > canvas:first-child {
             height: calc(100% - 20px);
             background-color: var(--vscode-panel-background);
         }
-        &:last-child {
+        & > canvas:last-child {
             height: 20px;
             background-color: transparent;
         }

@@ -1,4 +1,5 @@
-import { VisualizationOptions, VisualizationStyleOptions } from "./AudioToolkitModule";
+/* eslint-disable prefer-spread */
+import { VisualizationOptions, VisualizationStyleOptions } from "../types";
 import { atodb, dbtoa, generateRuler, getRuler, isCloseToMultipleOf, mod } from "../utils";
 
 export interface VectorResizeOptions {
@@ -114,7 +115,7 @@ class VectorImageProcessor {
         ctx: CanvasRenderingContext2D,
         dataSlices: VectorDataSlice[],
         { width = ctx.canvas.width, height = ctx.canvas.height, verticalZoom = 1, verticalOffset = 0, beforeAndAfter = "inherit", paintOver = false, paintSeparator = !paintOver, confidenceDataSlices, confidenceThreshold }: Partial<VectorPaintOptions>,
-        { viewRange }: Pick<VisualizationOptions<any>, "viewRange">,
+        { viewRange }: Pick<VisualizationOptions, "viewRange">,
         { phosphorColor = "rgb(67, 217, 150)", separatorColor = "grey" }: Partial<Pick<VisualizationStyleOptions, "phosphorColor" | "separatorColor">> 
     ) {
         const numberOfChannels = dataSlices[0].vectors.length;
@@ -516,7 +517,7 @@ class VectorImageProcessor {
         ctx: CanvasRenderingContext2D,
         sampleRate: number,
         { width = ctx.canvas.width, height = ctx.canvas.height, labelsHeight = 0 }: Partial<VectorPaintOptions>,
-        { viewRange, configuration: { audioUnit, beatsPerMeasure, beatsPerMinute, division } }: Pick<VisualizationOptions<any>, "viewRange" | "configuration">,
+        { viewRange, configuration: { audioUnit, beatsPerMeasure, beatsPerMinute, division } }: Pick<VisualizationOptions, "viewRange" | "configuration">,
         { gridColor = "rgb(0, 53, 0)", gridRulerColor = "white", textColor = "white", labelFont = 'Consolas, "Courier New", "SF Mono", Monaco, Menlo, Courier, monospace' }: Partial<Pick<VisualizationStyleOptions, "gridColor" | "gridRulerColor" | "textColor" | "labelFont">> = {}
     ) {
         const { ruler } = getRuler(viewRange, audioUnit, { sampleRate, beatsPerMeasure, beatsPerMinute, division });
@@ -564,7 +565,7 @@ class VectorImageProcessor {
         dataSlices: VectorDataSlice[],
         x: number, y: number,
         { width, height, verticalZoom = 1, verticalOffset = 0 }: Partial<VectorPaintOptions> & Pick<VectorPaintOptions, "width" | "height">,
-        { viewRange }: Pick<VisualizationOptions<any>, "viewRange">
+        { viewRange }: Pick<VisualizationOptions, "viewRange">
     ): VectorCursorInfo {
         const numberOfChannels = dataSlices[0].vectors.length;
         const yMin = (verticalOffset - 1) / verticalZoom;

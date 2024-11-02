@@ -15,17 +15,20 @@ type Props = Pick<AudioEditorState, "masterGain" | "trackNames" | "trackGains" |
 const ArrangementContainer: React.FunctionComponent<Props> = (props) => {
     const { trackNames, trackGains, trackMutes, trackSolos, trackPans, viewRange } = props;
     const audioEditor = useContext(AudioEditorContext)!;
+    const { numberOfChannels } = audioEditor;
     const tracksContainers = [];
-    for (let i = 0; i < audioEditor.audioBuffer.numberOfChannels; i++) {
+    for (let i = 0; i < numberOfChannels; i++) {
         const trackProps = {
             ...props,
             index: i,
+            total: numberOfChannels,
             numberOfChannels: 1,
             name: trackNames[i] || `${i + 1}`,
             gain: trackGains[i],
             mute: trackMutes[i],
             solo: trackSolos[i],
-            pan: trackPans[i]
+            pan: trackPans[i],
+            size: "tiny" as const
         };
         tracksContainers[i] = <ArrangementTrackContainer {...trackProps} />
     }

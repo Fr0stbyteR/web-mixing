@@ -2,8 +2,9 @@
     display: flex;
     flex: 1 1 auto;
     overflow: auto;
+    position: relative;
 
-    padding-bottom: 40px;
+    padding-bottom: 30px;
     --track-control-width: 160px;
 
     & .arrangement-horizontal-scroller-container {

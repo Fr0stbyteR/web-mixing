@@ -4,6 +4,7 @@ import ArrangementContainer from "./ArrangementContainer";
 import MixerContainer from "./MixerContainer";
 import PlayerContainer from "./PlayerContainer";
 import { AudioEditorContext } from "./contexts";
+import LevelMeter from "./LevelMeter";
 
 const AudioEditorContainer: React.FunctionComponent = () => {
     const audioEditor = useContext(AudioEditorContext)!;
@@ -86,6 +87,9 @@ const AudioEditorContainer: React.FunctionComponent = () => {
             <PlayerContainer {...componentProps} />
             <ArrangementContainer {...componentProps} />
             <MixerContainer />
+            <div className="master-meter-container">
+                <LevelMeter {...componentProps} minDB={-70} maxDB={5} numberOfChannels={2} peakAnalyserNode={audioEditor.player!.masterPeakAnalyserNode} showRuler />
+            </div>
         </div>
     );
 };
