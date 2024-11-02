@@ -6,26 +6,31 @@ import AudioEditor from "./core/AudioEditor";
 import { AudioEditorContext } from "./components/contexts";
 import AudioEditorContainer from "./components/AudioEditorContainer";
 
-type Props = {};
-const audioContext = new AudioContext({ latencyHint: 0.0001 });
+type Props = {
+    repositoryUrl: string
+    audioContext: AudioContext;
+};
 
-const App: React.FunctionComponent<Props> = () => {
+const REPOSITORY_URL = "http://localhost/web-mixing-data/list.json";
+const AUDIO_CONTEXT = new AudioContext({ latencyHint: 0.0001 });
+
+const App: React.FunctionComponent<Props> = ({ repositoryUrl = REPOSITORY_URL, audioContext = AUDIO_CONTEXT }) => {
     const [audioEditor, setAudioEditor] = useState<AudioEditor | null>(null);
     const [questData, setQuestData] = useState<QuestData[string] | null>(null);
     const quest = new URLSearchParams(location.search).get("q");
     useEffect(() => {
         (async () => {
-            const dataResponse = await fetch("./data/list.json");
+            const dataResponse = await fetch(repositoryUrl);
             const data: QuestData = await dataResponse.json();
             setQuestData(quest ? data[quest] || null : null);
         })();
-    }, []);
+    }, [quest, repositoryUrl]);
     useEffect(() => {
         (async () => {
             if (!quest || !questData) return;
             const { files, path } = questData;
             const audioBuffers = await Promise.all(files.map(async (fileName) => {
-                const url = `${path}/${fileName}`;
+                const url = new URL(`${path}/${fileName}`, repositoryUrl);
                 const response = await fetch(url);
                 const arrayBuffer = await response.arrayBuffer();
                 return audioContext.decodeAudioData(arrayBuffer);

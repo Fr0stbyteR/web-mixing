@@ -1,0 +1,86 @@
+.arrangement-track-container {
+    display: flex;
+    flex: 1 1 auto;
+    font-size: 12px;
+
+    &.tiny {
+        flex: 0 0 20px;
+    }
+    &.small {
+        flex: 0 0 100px;
+    }
+    &.medium {
+        flex: 0 0 160px;
+    }
+    &.large {
+        flex: 0 0 300px;
+    }
+    &.huge {
+        flex: 0 0 600px;
+    }
+    & > .controls-container {
+        flex: 0 0 calc(var(--track-control-width) - 8px);
+        margin: 4px;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+
+        & > .name {
+            overflow-wrap: anywhere;
+            padding: 6px;
+            flex: 1 1 auto;
+        }
+        & > .meter {
+            flex: 0 1 auto;
+            max-height: 10px;
+            height: 10px;
+            display: flex;
+            position: relative;
+        }
+        & > .controls {
+            display: flex;
+            flex: 0 0 20px;
+            gap: 4px;
+            height: 20px;
+
+            & > div {
+                display: flex;
+            }
+            & span {
+                font-size: 12px;
+            }
+
+            & .mute > vscode-button {
+                border: 1px var(--vscode-editorError-foreground) solid;
+            }
+            & .mute.active > vscode-button {
+                background-color: var(--vscode-editorError-foreground);
+            }
+
+            & .solo > vscode-button {
+                border: 1px var(--vscode-editorWarning-foreground) solid;
+            }
+            & .solo.active > vscode-button {
+                background-color: var(--vscode-editorWarning-foreground);
+            }
+
+            & .gain-input {
+                background-color: var(--vscode-minimapSlider-activeBackground);
+                flex: 1 0 auto;
+                text-align: end;
+            }
+        }
+        & .gain-slider {
+            position: absolute;
+            display: block;
+            width: 8px;
+            height: 100%;
+            background-color: var(--vscode-minimapSlider-background);
+            border: 1px solid var(--vscode-editor-foreground);
+            border-radius: 4px;
+            cursor: grab;
+            margin-left: -5px;
+            margin-top: -1px;
+        }
+    }
+}

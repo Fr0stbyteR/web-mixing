@@ -17,4 +17,11 @@ export default defineConfig((configEnv) => ({
         sourcemap: configEnv.mode === "development" ? "inline" as const : false
     },
     plugins: [react()],
+    css: {
+        preprocessorOptions: {
+            scss: {
+                api: 'modern-compiler' // or "modern"
+            }
+        }
+    }
 }));

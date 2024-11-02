@@ -1,5 +1,5 @@
 import "./GainInput.scss";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { round } from "../utils";
 
 type Props = {
@@ -13,7 +13,7 @@ type Props = {
 const GainInput: React.FunctionComponent<Props> = ({ unit, gain, onAdjust, onChange, style }) => {
     const [editing, setEditing] = useState(false);
     const [dragged, setDragged] = useState(false);
-    const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    const handleMouseDown = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
         if (editing) return;
         e.stopPropagation();
         e.preventDefault();
@@ -51,8 +51,8 @@ const GainInput: React.FunctionComponent<Props> = ({ unit, gain, onAdjust, onCha
         document.addEventListener("mousemove", handleMouseMove);
         document.addEventListener("mouseup", handleMouseUp);
         document.addEventListener("keydown", handleKeyDown);
-    };
-    const handleClick = (e: React.MouseEvent<HTMLSpanElement>) => {
+    }, [editing, gain, onAdjust, onChange, unit]);
+    const handleClick = useCallback((e: React.MouseEvent<HTMLSpanElement>) => {
         if (editing) return;
         if (dragged) return;
         const span = e.currentTarget;
@@ -98,7 +98,7 @@ const GainInput: React.FunctionComponent<Props> = ({ unit, gain, onAdjust, onCha
         };
         span.addEventListener("blur", handleBlur);
         span.addEventListener("keydown", handleKeyDown);
-    };
+    }, [dragged, editing, onAdjust, onChange, unit]);
     const classList = ["gain-input"];
     classList.push(unit === "dB" ? "gain-input-db" : "gain-input-linear");
     if (editing) classList.push("editing");
