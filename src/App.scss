@@ -3,7 +3,23 @@
     display: flex;
     position: relative;
 
-    & > vscode-progress-ring {
+    & > .main-loading {
+        flex: 0 1 auto;
+        display: flex;
+        flex-direction: column;
+        position: relative;
         margin: auto;
+        gap: 20px;
+
+        & > vscode-progress-ring {
+            margin: auto;
+        }
     }
+
+    & > .main-loading-error {
+        flex: 0 1 auto;
+        margin: auto;
+        display: flex;
+    }
+
 }
