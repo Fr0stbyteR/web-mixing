@@ -168,6 +168,5 @@ class TemporalAnalyserProcessor extends AudioWorkletProxyProcessor<IPeakAnalyser
 try {
     registerProcessor(processorId, TemporalAnalyserProcessor);
 } catch (error) {
-    // eslint-disable-next-line no-console
     console.warn(error);
 }

@@ -46,10 +46,10 @@ class AudioEditor extends TypedEventEmitter<AudioEditorEventMap> {
         beatsPerMeasure: 4,
         division: 16
     };
-    static async fromData(audioBuffer: AudioBuffer, context: AudioContext, name: string, configuration: Partial<AudioEditorConfiguration> = {}, uri?: string, workspaceUri = location.href) {
-        const operableAudioBuffer: OperableAudioBuffer = Object.setPrototypeOf(audioBuffer, OperableAudioBuffer.prototype);
-        const timeDomainData = operableAudioBuffer.toArray(true);
-        const audioEditor = new AudioEditor(operableAudioBuffer, timeDomainData, name, context, { ...this.DEFAULT_CONFIGURATION, ...configuration }, uri, workspaceUri);
+    static async fromData(audioBuffer: Float32Array[], context: AudioContext, name: string, configuration: Partial<AudioEditorConfiguration> = {}, uri?: string, workspaceUri = location.href) {
+        // const operableAudioBuffer: OperableAudioBuffer = Object.setPrototypeOf(audioBuffer, OperableAudioBuffer.prototype);
+        // const timeDomainData = operableAudioBuffer.toArray(true);
+        const audioEditor = new AudioEditor(audioBuffer, audioBuffer, name, context, { ...this.DEFAULT_CONFIGURATION, ...configuration }, uri, workspaceUri);
         await audioEditor.initPlayer();
         // await audioEditor.initModules(state);
         audioEditor.setState({ isReady: true });
@@ -76,16 +76,16 @@ class AudioEditor extends TypedEventEmitter<AudioEditorEventMap> {
         return this._name;
     }
     get length() {
-        return this._audioBuffer.length;
+        return this._audioBuffer[0].length;
     }
     get numberOfChannels() {
-        return this._audioBuffer.numberOfChannels;
+        return this._audioBuffer.length;
     }
     get sampleRate() {
-        return this._audioBuffer.sampleRate;
+        return this._context.sampleRate;
     }
     get duration() {
-        return this._audioBuffer.duration;
+        return this._audioBuffer[0].length / this.sampleRate;
     }
     get audioBuffer() {
         return this._audioBuffer;
@@ -115,7 +115,7 @@ class AudioEditor extends TypedEventEmitter<AudioEditorEventMap> {
     public makingEdit = true;
     private _player: AudioPlayer | null = null;
     private constructor(
-        private _audioBuffer: OperableAudioBuffer,
+        private _audioBuffer: Float32Array[],
         private _timeDomainData: Float32Array[],
         private _name: string,
         private _context: AudioContext,
@@ -204,14 +204,13 @@ class AudioEditor extends TypedEventEmitter<AudioEditorEventMap> {
         this.setState({ loop });
         this.emit("loop", loop);
     }
-    setPlayhead(playheadIn: number, fromPlayer?: boolean) {
+    async setPlayhead(playheadIn: number, fromPlayer?: boolean) {
         const shouldReplay = !fromPlayer && this.state.playing === "playing";
-        if (shouldReplay) this.stop();
+        if (shouldReplay) this.player!.setPlayhead(playheadIn);
         const { length } = this;
         const playhead = Math.max(0, Math.min(length, Math.round(playheadIn)));
         this.setState({ playhead });
         this.emit("playhead", playhead);
-        if (shouldReplay) this.play();
     }
     async selectAll() {
         this.setSelRangeToAll();

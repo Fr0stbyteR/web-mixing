@@ -56,13 +56,14 @@ const OutputContainer: React.FunctionComponent<Props> = (props) => {
         const gain = atodb(1 / max);
         audioEditor.setMasterGain(gain);
     }, [audioEditor]);
+    const handleChangeGain = useCallback((gain: number) => audioEditor.setMasterGain(gain), [audioEditor]);
     return (
         <div className="output-container">
             <div className="output-controls">
                 <VSCodeButton onClick={handleClickBounce}>Bounce</VSCodeButton>
                 <VSCodeButton onClick={handleClickNormalize}>Normalize</VSCodeButton>
                 <span>Current Master Gain: </span>
-                <GainInput gain={masterGain} unit="dB" />
+                <GainInput gain={masterGain} unit="dB" onAdjust={handleChangeGain} onChange={handleChangeGain} />
                 <a hidden ref={aRef}></a>
             </div>
             <div className="master-meter-container">

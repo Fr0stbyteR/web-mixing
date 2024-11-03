@@ -7,8 +7,8 @@ import { AudioEditorContext } from "./components/contexts";
 import AudioEditorContainer from "./components/AudioEditorContainer";
 
 type Props = {
-    repositoryUrl: string
-    audioContext: AudioContext;
+    repositoryUrl?: string
+    audioContext?: AudioContext;
 };
 
 const REPOSITORY_URL = "http://localhost/web-mixing-data/list.json";
@@ -35,11 +35,7 @@ const App: React.FunctionComponent<Props> = ({ repositoryUrl = REPOSITORY_URL, a
                 const arrayBuffer = await response.arrayBuffer();
                 return audioContext.decodeAudioData(arrayBuffer);
             }));
-            const audioBuffer = audioContext.createBuffer(audioBuffers.length, audioBuffers[0].length, audioBuffers[0].sampleRate);
-            for (let i = 0; i < audioBuffers.length; i++) {
-                audioBuffer.copyToChannel(audioBuffers[i].getChannelData(0), i);
-            }
-            const audioEditor = await AudioEditor.fromData(audioBuffer, audioContext, quest);
+            const audioEditor = await AudioEditor.fromData(audioBuffers.map(ab => ab.getChannelData(0)), audioContext, quest);
             audioEditor.setState({ trackNames: files, trackPans: pans ?? new Array(audioBuffers.length).fill(0) });
             setAudioEditor(audioEditor);
             const handleKeyDown = async (e: KeyboardEvent) => {

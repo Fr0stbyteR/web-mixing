@@ -25,12 +25,15 @@ type Props = Pick<VisualizationStyleOptions, "gridRulerColor" | "gridColor" | "t
 
 const ArrangementTrackContainer: React.FunctionComponent<Props> = (props) => {
     const { size = "medium", index, total, name, gain, mute, solo, pan, viewRange, windowSize } = props;
-    const backgroundColor = `hsl(${~~(index / total * 365)}deg 50% 30% / 10%)`;
-    const phosphorColor = `hsl(${~~(index / total * 365)}deg 50% 50%)`;
+    const hue = index / Math.min(10, total) * 360 % 360;
+    const backgroundColor = `hsl(${~~(hue)}deg 50% 30% / 10%)`;
+    const phosphorColor = `hsl(${~~(hue)}deg 50% 50%)`;
     const audioEditor = useContext(AudioEditorContext)!;
     const [dataSlice, setDataSlice] = useState<VectorDataSlice>();
     const [calculating, setCalculating] = useState(false);
+    const [needRender, setNeedRender] = useState(false);
     const canvasRef = useRef<HTMLCanvasElement>(null);
+    const containerRef = useRef<HTMLDivElement>(null);
     const handleClickMute = useCallback(() => audioEditor.setMute(index, !mute), [audioEditor, index, mute]);
     const handleClickSolo = useCallback(() => audioEditor.setSolo(index, !solo), [audioEditor, index, solo]);
     const handleGainChange = useCallback((gain: number) => audioEditor.setGain(index, gain), [audioEditor, index]);
@@ -72,15 +75,36 @@ const ArrangementTrackContainer: React.FunctionComponent<Props> = (props) => {
         document.addEventListener("keydown", handleKeyDown);
     }, [audioEditor, gain, index, minDB]);
     const handleDoubleClickGainController = useCallback(() => audioEditor.setGain(index, 0), [audioEditor, index]);
-    
     const paint = useCallback((canvasRef: React.RefObject<HTMLCanvasElement>) => {
         if (!dataSlice) return;
         const canvas = canvasRef.current;
         const ctx = canvas?.getContext("2d");
         if (!canvas || !ctx) return;
         const [width, height] = setCanvasToFullSize(canvas);
+        const parent = containerRef.current!.parentElement!;
+        const canvasRect = canvas.getBoundingClientRect();
+        const containerRect = parent.getBoundingClientRect();
+        if (canvasRect.bottom <= containerRect.top || canvasRect.top >= containerRect.bottom) {
+            setNeedRender(true);
+            return;
+        }
         VectorImageProcessor.paint(ctx, [dataSlice], { width, height }, { viewRange }, { phosphorColor });
+        setNeedRender(false);
     }, [dataSlice, viewRange, phosphorColor]);
+    const handleScrollEnd = useCallback((e: Event) => {
+        const parent = containerRef.current?.parentElement;
+        if (!parent) return;
+        paint(canvasRef);
+    }, [paint]);
+    useEffect(() => {
+        const parent = containerRef.current?.parentElement;
+        if (!parent) return;
+        if (needRender) {
+            parent.addEventListener("scrollend", handleScrollEnd);
+        }
+        return () => parent.removeEventListener("scrollend", handleScrollEnd);
+    }, [handleScrollEnd, needRender]);
+    
     const handleCanvasMouseDown = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
         (document.activeElement as HTMLElement)?.blur();
         e.stopPropagation();
@@ -153,7 +177,7 @@ const ArrangementTrackContainer: React.FunctionComponent<Props> = (props) => {
     const panLeft = `${Math.min((pan + 1) * 0.5, 0.5) * 100}%`;
     const panWidth = `${Math.abs(pan) * 50}%`;
     return (
-        <div style={{ backgroundColor }} className={`arrangement-track-container ${size}`}>
+        <div style={{ backgroundColor }} className={`arrangement-track-container ${size}`} ref={containerRef}>
             <div className="controls-container">
                 <div className="name" title={name}>{name}</div>
                 <div className="pan" title={`Pan: ${pan.toFixed(2)}`}>

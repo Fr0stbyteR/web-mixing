@@ -1,6 +1,7 @@
 import { dbtoa } from "../utils";
 import AudioEditor, { AudioEditorState } from "./AudioEditor";
 import PeakAnalyserNode from "../worklets/PeakAnalyserNode";
+import SplitterPlayerNode from "../worklets/SplitterPlayerNode";
 
 export default class AudioPlayer {
     static async init(editor: AudioEditor) {
@@ -14,13 +15,13 @@ export default class AudioPlayer {
     readonly stereoPannerNodePool: StereoPannerNode[] = [];
     readonly gainNodePool: GainNode[] = [];
     readonly peakAnalyserNodePool: PeakAnalyserNode[] = [];
-    readonly splitterNode: ChannelSplitterNode;
+    // readonly splitterNode: ChannelSplitterNode;
     readonly masterGainNode: GainNode;
     playing: boolean;
     currentSample: number;
     currentTime: number;
     // currentChannels: boolean[];
-    bufferSourceNode?: AudioBufferSourceNode;
+    splitterPlayerNode!: SplitterPlayerNode;
     masterPeakAnalyserNode!: PeakAnalyserNode;
     // monitoring: boolean;
     get context() {
@@ -29,41 +30,16 @@ export default class AudioPlayer {
     get destination() {
         return this.context.destination;
     }
-    get loop() {
-        return this.bufferSourceNode?.loop;
-    }
     handleLoopChanged = (loopIn: boolean) => {
     };
-    handleSelRangeChanged = (selRange: [number, number] | null) => {
-        const { bufferSourceNode } = this;
-        if (!bufferSourceNode) return;
-        const { buffer, loop } = bufferSourceNode;
-        if (!buffer) return;
-        const { sampleRate } = buffer;
-        if (loop) {
-            if (selRange) {
-                bufferSourceNode.loopStart = selRange[0] / sampleRate;
-                bufferSourceNode.loopEnd = selRange[1] / sampleRate;
-            } else {
-                bufferSourceNode.loopStart = 0;
-                bufferSourceNode.loopEnd = 0;
-            }
-        } else {
-            bufferSourceNode.loopStart = 0;
-            bufferSourceNode.loopEnd = 0;
-            if (selRange) bufferSourceNode.stop(this.currentTime + (selRange[1] - this.currentSample) / sampleRate);
-            else bufferSourceNode.stop(Number.MAX_VALUE);
-        }
+    handleSelRangeChanged = async (selRange: [number, number] | null) => {
+        const { editor } = this;
+        await this.splitterPlayerNode.setLoopRange(...(selRange ?? [0, editor.length]));
     };
     handleEnded = () => {
-        const { bufferSourceNode } = this;
-        if (!bufferSourceNode) return;
-        this.editor.handlePlayerEnded(this.getCurrentSample());
-        this.bufferSourceNode!.removeEventListener("ended", this.handleEnded);
-        this.bufferSourceNode!.disconnect();
     };
-    handlePlayerStateUpdated = (state: Partial<AudioEditorState>) => {
-        const { masterGain, trackGains, trackPans, trackMutes, trackSolos, loop: loopIn } = state;
+    handlePlayerStateUpdated = async (state: Partial<AudioEditorState>) => {
+        const { masterGain, trackGains, trackPans, trackMutes, trackSolos, loop: loop } = state;
         if (trackMutes || trackSolos) {
             for (let i = 0; i < this.editor.numberOfChannels; i++) {
                 this.muteGainNodePool[i].gain.setTargetAtTime(this.editor.enabledChannels[i] ? 1 : 0, this.context.currentTime, 0.01);
@@ -82,30 +58,8 @@ export default class AudioPlayer {
         if (typeof masterGain === "number") {
             this.masterGainNode.gain.setTargetAtTime(dbtoa(masterGain), this.context.currentTime, 0.01);
         }
-        if (typeof loopIn === "boolean") {
-            const { bufferSourceNode, editor } = this;
-            if (!bufferSourceNode) return;
-            const { buffer, loop } = bufferSourceNode;
-            if (!buffer) return;
-            if (loop === loopIn) return;
-            const { sampleRate } = buffer;
-            const selRange = editor.state.selRange;
-            bufferSourceNode.loop = loopIn;
-            if (loopIn) {
-                if (selRange) {
-                    bufferSourceNode.loopStart = selRange[0] / sampleRate;
-                    bufferSourceNode.loopEnd = selRange[1] / sampleRate;
-                } else {
-                    bufferSourceNode.loopStart = 0;
-                    bufferSourceNode.loopEnd = 0;
-                }
-                bufferSourceNode.stop(Number.MAX_VALUE);
-            } else {
-                bufferSourceNode.loopStart = 0;
-                bufferSourceNode.loopEnd = 0;
-                if (selRange) bufferSourceNode.stop(this.currentTime + (selRange[1] - this.currentSample) / sampleRate);
-                else bufferSourceNode.stop(Number.MAX_VALUE);
-            }
+        if (typeof loop === "boolean") {
+            await this.splitterPlayerNode.setLoop(loop);
         }
     };
 
@@ -121,9 +75,9 @@ export default class AudioPlayer {
         if (this.$updateCursorRaf === -1) this.$updateCursorRaf = requestAnimationFrame(this.updateCursorCallback);
         this.updateCursorScheduled = true;
     };
-    updateCursor() {
-        if (!this.bufferSourceNode) return;
-        this.editor.setPlayhead(this.getCurrentSample(), true);
+    async updateCursor() {
+        if (!this.playing) return;
+        this.editor.setPlayhead(await this.getCurrentSample(), true);
         this.scheduleUpdateCursor();
     }
     private constructor(editor: AudioEditor) {
@@ -134,13 +88,13 @@ export default class AudioPlayer {
         // this.monitoring = false;
         // this.dummyAnalyserNode = this.context.createAnalyser();
         
-        this.splitterNode = this.context.createChannelSplitter(numberOfChannels);
+        // this.splitterNode = this.context.createChannelSplitter(numberOfChannels);
         this.masterGainNode = this.context.createGain();
         this.masterGainNode.gain.value = dbtoa(masterGain);
         for (let i = 0; i < numberOfChannels; i++) {
             this.muteGainNodePool[i] = this.context.createGain();
             this.muteGainNodePool[i].gain.value = enabledChannels[i] ? 1 : 0;
-            this.splitterNode.connect(this.muteGainNodePool[i], i, 0);
+            // this.splitterNode.connect(this.muteGainNodePool[i], i, 0);
             this.gainNodePool[i] = this.context.createGain();
             this.gainNodePool[i].gain.value = dbtoa(trackGains[i]);
             this.muteGainNodePool[i].connect(this.gainNodePool[i]);
@@ -163,24 +117,24 @@ export default class AudioPlayer {
     private async initPeakAnalyser() {
         const audioWorklet = this.context.audioWorklet;
         await PeakAnalyserNode.register(audioWorklet);
+        await SplitterPlayerNode.register(audioWorklet);
         this.masterPeakAnalyserNode = new PeakAnalyserNode(this.context);
+        this.splitterPlayerNode = new SplitterPlayerNode(this.editor.audioBuffer, this.context);
         for (let i = 0; i < this.editor.numberOfChannels; i++) {
+            this.splitterPlayerNode.connect(this.muteGainNodePool[i], i, 0);
             this.peakAnalyserNodePool[i] = new PeakAnalyserNode(this.context);
             this.gainNodePool[i].connect(this.peakAnalyserNodePool[i]);
         }
+
     }
     async render(masterGain = 0) {
         const { sampleRate, numberOfChannels, length, audioBuffer, state } = this.editor;
         const { trackPans, trackGains } = state;
         const context = new OfflineAudioContext({ length, sampleRate, numberOfChannels: 2 });
+        await SplitterPlayerNode.register(context.audioWorklet);
         const stereoPannerNodePool: StereoPannerNode[] = [];
         const gainNodePool: GainNode[] = [];
-        const bufferSourceNode = context.createBufferSource();
-        bufferSourceNode.channelCountMode = "explicit";
-        bufferSourceNode.channelInterpretation = "discrete";
-        bufferSourceNode.channelCount = numberOfChannels;
-        bufferSourceNode.buffer = audioBuffer;
-        const splitterNode = context.createChannelSplitter(numberOfChannels);
+        const splitterPlayerNode = new SplitterPlayerNode(audioBuffer, context);
         const masterGainNode = context.createGain();
         masterGainNode.gain.value = dbtoa(masterGain);
         for (let i = 0; i < numberOfChannels; i++) {
@@ -189,78 +143,49 @@ export default class AudioPlayer {
             stereoPannerNodePool[i].pan.value = trackPans[i];
             gainNodePool[i] = context.createGain();
             gainNodePool[i].gain.value = dbtoa(trackGains[i]);
-            splitterNode.connect(gainNodePool[i], i, 0);
+            splitterPlayerNode.connect(gainNodePool[i], i, 0);
             gainNodePool[i].connect(stereoPannerNodePool[i]);
             stereoPannerNodePool[i].connect(masterGainNode);
         }
-        bufferSourceNode.connect(splitterNode);
         masterGainNode.connect(context.destination);
-        bufferSourceNode.start();
+        await splitterPlayerNode.play();
         return context.startRendering();
     }
     async destroy() {
         // if (this.monitoring) this.stopMonitoring();
         if (this.playing) this.stop();
         await this.masterPeakAnalyserNode.destroy();
+        await this.splitterPlayerNode.destroy();
     }
-    getCurrentSample() {
-        if (!this.bufferSourceNode) return 0;
-        const { buffer } = this.bufferSourceNode;
-        if (!buffer) return 0;
-        const delta = (this.context.currentTime - this.currentTime) * buffer.sampleRate;
-        const selRange = this.editor.state?.selRange || [0, buffer.length];
-        this.currentSample += delta;
-        this.currentTime = this.context.currentTime;
-        if (this.loop) {
-            if (this.currentSample > selRange[1]) this.currentSample = (this.currentSample - selRange[0]) % (selRange[1] - selRange[0]) + selRange[0];
-        } else {
-            if (this.currentSample > selRange[1]) this.currentSample = selRange[1];
-        }
-        return ~~this.currentSample;
+    async getCurrentSample() {
+        const playhead = await this.splitterPlayerNode.getPlayhead();
+        this.currentSample = playhead;
+        return playhead;
     }
-    play() {
-        this.stop();
-        const audio = this.editor;
-        const { playhead, selRange, loop } = this.editor.state;
-        const { sampleRate, numberOfChannels, audioBuffer } = audio;
-        const offset = (selRange ? selRange[0] : playhead) / sampleRate;
-        const duration = selRange ? (selRange[1] - selRange[0]) / sampleRate : undefined;
-        const bufferSourceNode = this.context.createBufferSource();
-        bufferSourceNode.channelCountMode = "explicit";
-        bufferSourceNode.channelInterpretation = "discrete";
-        bufferSourceNode.channelCount = numberOfChannels;
+    async play(playheadIn?: number) {
+        await this.stop();
+        const { length, state } = this.editor;
+        const { selRange, loop } = state;
+        const playhead = playheadIn ?? state.playhead;
         this.currentTime = this.context.currentTime;
         this.currentSample = selRange ? selRange[0] : playhead;
-        this.bufferSourceNode = bufferSourceNode;
-        bufferSourceNode.buffer = audioBuffer;
         // bufferSourceNode.connect(this.dummyAnalyserNode);
         this.masterGainNode.connect(this.masterPeakAnalyserNode);
-        bufferSourceNode.connect(this.splitterNode);
-        bufferSourceNode.loop = !!loop;
-        bufferSourceNode.addEventListener("ended", this.handleEnded);
-        if (loop) {
-            if (duration) {
-                bufferSourceNode.loopStart = offset;
-                bufferSourceNode.loopEnd = offset + duration;
-            }
-            bufferSourceNode.start(this.currentTime, offset);
-        } else {
-            bufferSourceNode.start(this.currentTime, offset);
-            if (duration) bufferSourceNode.stop(this.currentTime + duration);
-            else bufferSourceNode.stop(Number.MAX_VALUE);
-        }
+        await this.splitterPlayerNode.setLoop(loop);
+        await this.splitterPlayerNode.setLoopRange(...(selRange ?? [0, length]));
+        await this.splitterPlayerNode.setPlayhead(playhead);
+        await this.splitterPlayerNode.play();
         this.playing = true;
         this.scheduleUpdateCursor();
     }
-    stop() {
+    async stop() {
+        await this.splitterPlayerNode.stop();
         try {
             this.masterGainNode.disconnect(this.masterPeakAnalyserNode);
         } catch (error) { /* empty */ }
-        if (!this.bufferSourceNode) return;
-        this.bufferSourceNode.stop();
-        this.bufferSourceNode.removeEventListener("ended", this.handleEnded);
-        this.bufferSourceNode.disconnect();
-        delete this.bufferSourceNode;
         this.playing = false;
+    }
+    async setPlayhead(playhead: number) {
+        await this.play(playhead);
     }
 }

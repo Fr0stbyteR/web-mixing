@@ -5,14 +5,18 @@
     flex-direction: row;
 
     & .output-controls {
-        flex: 0 0 auto;
+        flex: 0 0 300px;
         position: relative;
         display: flex;
         margin: auto;
         gap: 4px;
         padding: 4px;
         & > * {
-            margin: auto 0px
+            margin: auto 0px;
+            font-size: 12px;
+        }
+        & .gain-input {
+            flex: 0 0 50px;
         }
     }
 
