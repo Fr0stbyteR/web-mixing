@@ -1,10 +1,8 @@
 .audio-editor-container div.arrangement-horizontal-scroller {
-    flex: 0 0 30px;
+    flex: 0 0 100%;
     position: relative;
     display: flex;
     flex-direction: row;
-    min-height: 30px;
-    margin-left: 24px;
 
     & > .editor-map-canvas-container {
         display: inline-block;
@@ -77,41 +75,5 @@
                 cursor: ew-resize;
             }
         }
-    }
-
-    & > .editor-map-controls {
-        display: flex;
-        flex: 0 0 var(--visualizer-right-spacing);
-        height: 100%;
-        align-items: center;
-
-        & > span {
-            margin: 1px;
-
-            &:first-child {
-                margin-left: auto;
-            }
-            & vscode-button {
-                border-bottom: 1px transparent solid;
-                border-radius: 0px;
-
-                &.active {
-                    border-bottom: 1px var(--vscode-panelTitle-activeBorder) solid;
-                }
-            }
-        }
-        & > span.editor-map-add-component > vscode-dropdown {
-            width: 0px;
-        }
-    }
-    
-    &.configuring > .editor-map-controls {
-        flex: 0 0 calc(var(--visualizer-right-spacing) + var(--visualizer-configuration-spacing));
-    }
-    &.monitoring > .editor-map-controls {
-        flex: 0 0 calc(var(--visualizer-right-spacing) + var(--visualizer-monitor-spacing));
-    }
-    &.configuring.monitoring > .editor-map-controls {
-        flex: 0 0 calc(var(--visualizer-right-spacing) + var(--visualizer-configuration-spacing) + var(--visualizer-monitor-spacing));
     }
 }

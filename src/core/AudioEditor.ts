@@ -145,7 +145,7 @@ class AudioEditor extends TypedEventEmitter<AudioEditorEventMap> {
             if ((state as any)[key] !== (oldState as any)[key]) this.emit(key as any, (state as any)[key]);
         }
         this.emit("state", this.state);
-        if ((["trackGains", "trackSolos", "trackMutes", "trackGains", "masterGain", "loop"] as (keyof AudioEditorState)[]).find(k => k in state)) {
+        if ((["trackGains", "trackSolos", "trackMutes", "trackGains", "trackPans", "masterGain", "loop"] as (keyof AudioEditorState)[]).find(k => k in state)) {
             this.emit("playerStateUpdated", state);
         }
     }

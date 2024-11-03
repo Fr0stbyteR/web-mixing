@@ -28,7 +28,7 @@ const App: React.FunctionComponent<Props> = ({ repositoryUrl = REPOSITORY_URL, a
     useEffect(() => {
         (async () => {
             if (!quest || !questData) return;
-            const { files, path } = questData;
+            const { files, path, pans } = questData;
             const audioBuffers = await Promise.all(files.map(async (fileName) => {
                 const url = new URL(`${path}/${fileName}`, repositoryUrl);
                 const response = await fetch(url);
@@ -40,7 +40,7 @@ const App: React.FunctionComponent<Props> = ({ repositoryUrl = REPOSITORY_URL, a
                 audioBuffer.copyToChannel(audioBuffers[i].getChannelData(0), i);
             }
             const audioEditor = await AudioEditor.fromData(audioBuffer, audioContext, quest);
-            audioEditor.setState({ trackNames: files });
+            audioEditor.setState({ trackNames: files, trackPans: pans ?? new Array(audioBuffers.length).fill(0) });
             setAudioEditor(audioEditor);
             const handleKeyDown = async (e: KeyboardEvent) => {
                 if (e.key !== " ") return;
@@ -56,7 +56,7 @@ const App: React.FunctionComponent<Props> = ({ repositoryUrl = REPOSITORY_URL, a
             };
             window.addEventListener("keydown", handleKeyDown);
         })();
-    }, [questData])
+    }, [audioContext, quest, questData, repositoryUrl])
     return (
         <div id="main-container">
             {audioEditor ? (

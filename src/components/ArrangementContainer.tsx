@@ -1,20 +1,27 @@
 import "./ArrangementContainer.scss";
-import { useContext } from "react";
+import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import { AudioEditorContext } from "./contexts";
 import ArrangementTrackContainer from "./ArrangementTrackContainer";
-import { AudioEditorState } from "../core/AudioEditor";
-import ArrangementHorizontalScroller from "./ArrangementHorizontalScroller";
-import { VisualizationStyleOptions } from "../types";
+import { AudioEditorConfiguration, AudioEditorState } from "../core/AudioEditor";
+import { TrackSize, VisualizationStyleOptions } from "../types";
+import { getCssFromPosition } from "../utils";
+import ArrangementRuler from "./ArrangementRuler";
 
 type Props = Pick<AudioEditorState, "masterGain" | "trackNames" | "trackGains" | "trackMutes" | "trackPans" | "trackSolos" | "loop" | "playhead" | "selRange" | "viewRange">
 & Pick<VisualizationStyleOptions, "gridRulerColor" | "gridColor" | "textColor" | "monospaceFont">
 & {
+    configuration: AudioEditorConfiguration;
     windowSize: number[];
+    scrollerSize: number;
+    trackSize: TrackSize;
+    setTrackSize: (trackSize: TrackSize) => any;
 };
 
 const ArrangementContainer: React.FunctionComponent<Props> = (props) => {
-    const { trackNames, trackGains, trackMutes, trackSolos, trackPans, viewRange } = props;
+    const { trackNames, trackGains, trackMutes, trackSolos, trackPans, playhead, selRange, viewRange, windowSize, scrollerSize, trackSize, setTrackSize } = props;
     const audioEditor = useContext(AudioEditorContext)!;
+    const [newWindowSize, setNewWindowSize] = useState(windowSize);
+    const selectionOverlayRef = useRef<HTMLDivElement>(null);
     const { numberOfChannels } = audioEditor;
     const tracksContainers = [];
     for (let i = 0; i < numberOfChannels; i++) {
@@ -28,20 +35,91 @@ const ArrangementContainer: React.FunctionComponent<Props> = (props) => {
             mute: trackMutes[i],
             solo: trackSolos[i],
             pan: trackPans[i],
-            size: "tiny" as const
+            size: trackSize,
+            windowSize: newWindowSize
         };
         tracksContainers[i] = <ArrangementTrackContainer {...trackProps} />
     }
+    const handleResizeStartMouseDown = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+        if (!selectionOverlayRef.current || !selRange) return;
+        (document.activeElement as HTMLElement)?.blur();
+        e.stopPropagation();
+        e.preventDefault();
+        const rect = selectionOverlayRef.current.getBoundingClientRect();
+        const end = selRange[1];
+        const handleMouseMove = (e: MouseEvent) => {
+            e.stopPropagation();
+            e.preventDefault();
+            if (e.movementX) {
+                const x = e.clientX;
+                if (x > rect.right) audioEditor.scrollH((x - rect.right) / 1000);
+                else if (x < rect.left) audioEditor.scrollH((x - rect.left) / 1000);
+                const [viewStart, viewEnd] = audioEditor.state.viewRange;
+                const viewLength = viewEnd - viewStart;
+                const start = viewStart + (x - rect.left) / rect.width * viewLength;
+                audioEditor.setSelRange([start, end]);
+            }
+        };
+        const handleMouseUp = (e: MouseEvent) => {
+            e.stopPropagation();
+            e.preventDefault();
+            audioEditor.emitSelRangeToPlay();
+            document.removeEventListener("mousemove", handleMouseMove);
+            document.removeEventListener("mouseup", handleMouseUp);
+        };
+        document.addEventListener("mousemove", handleMouseMove);
+        document.addEventListener("mouseup", handleMouseUp);
+    }, [audioEditor, selRange]);
+    const handleResizeEndMouseDown = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+        if (!selectionOverlayRef.current || !selRange) return;
+        (document.activeElement as HTMLElement)?.blur();
+        e.stopPropagation();
+        e.preventDefault();
+        const rect = selectionOverlayRef.current.getBoundingClientRect();
+        const start = selRange[0];
+        const handleMouseMove = (e: MouseEvent) => {
+            e.stopPropagation();
+            e.preventDefault();
+            if (e.movementX) {
+                const x = e.clientX;
+                if (x > rect.right) audioEditor.scrollH((x - rect.right) / 1000);
+                else if (x < rect.left) audioEditor.scrollH((x - rect.left) / 1000);
+                const [viewStart, viewEnd] = audioEditor.state.viewRange;
+                const viewLength = viewEnd - viewStart;
+                const end = viewStart + (x - rect.left) / rect.width * viewLength;
+                audioEditor.setSelRange([start, end]);
+            }
+        };
+        const handleMouseUp = (e: MouseEvent) => {
+            e.stopPropagation();
+            e.preventDefault();
+            audioEditor.emitSelRangeToPlay();
+            document.removeEventListener("mousemove", handleMouseMove);
+            document.removeEventListener("mouseup", handleMouseUp);
+        };
+        document.addEventListener("mousemove", handleMouseMove);
+        document.addEventListener("mouseup", handleMouseUp);
+    }, [audioEditor, selRange]);
+    useEffect(() => setNewWindowSize([...windowSize]), [windowSize, trackSize]);
+    const [viewStart, viewEnd] = viewRange;
+    const [selStart, selEnd] = selRange || [0, 0];
+    const selLeft = getCssFromPosition(viewRange, selStart);
+    const selWidth = getCssFromPosition(viewRange, selStart, selEnd);
+    const playheadLeft = getCssFromPosition(viewRange, playhead);
     return (
         <div id="arrangement-container" className="arrangement-container">
-            <div className="arrangement-horizontal-scroller-container">
-                <ArrangementHorizontalScroller {...props} />
-            </div>
-            <div className="arrangement-vertical-scroller-container">
-                
-            </div>
+            <ArrangementRuler {...props} setTrackSize={setTrackSize} />
             <div className="tracks-containers">
                 {tracksContainers}
+            </div>
+            <div className="selection-overlay" ref={selectionOverlayRef} style={{ width: `${scrollerSize}px` }}>
+                <div className="selrange" style={{ left: selLeft, width: selWidth }} hidden={!selRange}>
+                    <div className="resize-handler resize-handler-w" onMouseDown={handleResizeStartMouseDown} />
+                    <div className="resize-handler resize-handler-e" onMouseDown={handleResizeEndMouseDown} />
+                </div>
+                <div className="playhead-container">
+                    {playhead < viewStart || playhead > viewEnd ? null : <div className="playhead" style={{ left: playheadLeft }} />}
+                </div>
             </div>
         </div>
     );

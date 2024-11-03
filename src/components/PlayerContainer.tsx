@@ -4,12 +4,19 @@ import { AudioEditorContext } from "./contexts";
 import { AudioEditorConfiguration, AudioEditorState } from "../core/AudioEditor";
 import { VSCodeButton } from "@vscode/webview-ui-toolkit/react";
 import TimeInput from "./TimeInput";
+import ArrangementHorizontalScroller from "./ArrangementHorizontalScroller";
+import { VisualizationStyleOptions } from "../types";
 
-type Props = Pick<AudioEditorState, "playing" | "playhead" | "loop"> & {
+type Props = Pick<AudioEditorState, "playing" | "playhead" | "loop" | "selRange" | "viewRange">
+& Pick<VisualizationStyleOptions, "gridRulerColor" | "gridColor" | "textColor" | "monospaceFont">
+ & {
     configuration: AudioEditorConfiguration;
+    scrollerSize: number;
+    windowSize: number[];
 };
 
-const PlayerContainer: FunctionComponent<Props> = ({ playhead, playing, loop, configuration }) => {
+const PlayerContainer: FunctionComponent<Props> = (props) => {
+    const { playhead, playing, loop, configuration, scrollerSize } = props;
     const audioEditor = useContext(AudioEditorContext)!;
     const handlePlayheadChanged = (playhead: number) => audioEditor.setPlayhead(playhead);
     const [playheadBeforePlay, setPlayheadBeforePlay] = useState(playhead);
@@ -41,7 +48,10 @@ const PlayerContainer: FunctionComponent<Props> = ({ playhead, playing, loop, co
     const { sampleRate } = audioEditor;
     return (
         <div className="player-container">
-            <span className="editor-main-player-controls-container">
+            <div className="time-input-container">
+                <TimeInput samples={playhead} sampleRate={sampleRate} {...configuration} onChange={handlePlayheadChanged} />
+            </div>
+            <div className="editor-main-player-controls-container">
                 <span className="editor-main-player-controls">
                     <VSCodeButton tabIndex={-1} title="Stop" disabled={playing === "stopped"} appearance="icon" onClick={handleClickStop}>
                         <span className="codicon codicon-debug-stop"></span>
@@ -56,8 +66,10 @@ const PlayerContainer: FunctionComponent<Props> = ({ playhead, playing, loop, co
                         <span className="codicon codicon-refresh"></span>
                     </VSCodeButton>
                 </span>
-            </span>
-            <TimeInput samples={playhead} sampleRate={sampleRate} {...configuration} onChange={handlePlayheadChanged} />
+            </div>
+            <div className="arrangement-horizontal-scroller-container" style={{ flex: `0 0 ${scrollerSize}px` }}>
+                <ArrangementHorizontalScroller {...props} />
+            </div>
         </div>
     );
 };

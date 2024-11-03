@@ -1,7 +1,7 @@
 import "./ArrangementTrackContainer.scss";
 import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import { AudioEditorContext } from "./contexts";
-import { VSCodeButton } from "@vscode/webview-ui-toolkit/react";
+import { VSCodeButton, VSCodeProgressRing } from "@vscode/webview-ui-toolkit/react";
 import GainInput from "./GainInput";
 import { VisualizationStyleOptions } from "../types";
 import LevelMeter from "./LevelMeter";
@@ -118,6 +118,7 @@ const ArrangementTrackContainer: React.FunctionComponent<Props> = (props) => {
         document.addEventListener("mouseup", handleMouseUp);
     }, [audioEditor, viewRange]);
     const handleCanvasWheel = useCallback((e: React.WheelEvent<HTMLDivElement>) => {
+        if (!e.altKey) return;
         if (!e.deltaX && !e.deltaY) return;
         let divMainFlexContainer = e.currentTarget.parentElement;
         while (divMainFlexContainer && !divMainFlexContainer.classList.contains("editor-main-flex")) {
@@ -149,10 +150,15 @@ const ArrangementTrackContainer: React.FunctionComponent<Props> = (props) => {
         })();
     }, [audioEditor, index]);
     useEffect(() => paint(canvasRef), [paint, windowSize]);
+    const panLeft = `${Math.min((pan + 1) * 0.5, 0.5) * 100}%`;
+    const panWidth = `${Math.abs(pan) * 50}%`;
     return (
         <div style={{ backgroundColor }} className={`arrangement-track-container ${size}`}>
             <div className="controls-container">
-                <div className="name">{name}</div>
+                <div className="name" title={name}>{name}</div>
+                <div className="pan" title={`Pan: ${pan.toFixed(2)}`}>
+                    <div className="pan-indicator" style={{ width: panWidth, left: panLeft }}></div>
+                </div>
                 <div className="controls">
                     <div className={`mute${mute ? " active" : ""}`}>
                         <VSCodeButton tabIndex={-1} aria-label="Mute" title="Mute" appearance={size === "tiny" ? "icon" : "secondary"} onClick={handleClickMute}>
@@ -171,9 +177,14 @@ const ArrangementTrackContainer: React.FunctionComponent<Props> = (props) => {
                     <div className="gain-slider" style={{ left: `${(gain - minDB) / (maxDB - minDB) * 100}%` }} onMouseDown={handleMouseDownGainController} onDoubleClick={handleDoubleClickGainController} />
                 </div>
             </div>
-            <div className="waveform" onMouseDown={handleCanvasMouseDown} onWheel={handleCanvasWheel}>
-                <canvas ref={canvasRef} />
-            </div>
+            {
+                calculating
+                ? <VSCodeProgressRing />
+                : <div className="waveform" onMouseDown={handleCanvasMouseDown} onWheel={handleCanvasWheel}>
+                    <canvas ref={canvasRef} />
+                </div>
+            }
+            
         </div>
     );
 };

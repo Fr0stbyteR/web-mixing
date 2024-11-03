@@ -2,6 +2,10 @@
     display: flex;
     flex: 1 1 auto;
     font-size: 12px;
+    border-top: 1px var(--vscode-input-border) solid;
+    &:last-child {
+        border-bottom: 1px var(--vscode-input-border) solid;
+    }
 
     &.tiny {
         flex: 0 0 16px;
@@ -42,15 +46,32 @@
     }
     & > .controls-container {
         flex: 0 0 calc(var(--track-control-width) - 8px);
-        margin: 4px;
+        padding: 4px;
         display: flex;
         flex-direction: column;
         gap: 4px;
+        border-right: 1px var(--vscode-input-border) solid;
+        border-left: 1px var(--vscode-input-border) solid;
+        overflow: hidden;
 
         & > .name {
-            overflow-wrap: anywhere;
             padding: 2px;
             flex: 1 1 auto;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+        }
+        & > .pan {
+            flex: 0 0 10px;
+            width: 100%;
+            background-color: var(--vscode-panel-background);
+            position: relative;
+            & > .pan-indicator {
+                background-color: var(--vscode-editor-foreground);
+                height: 100%;
+                min-width: 1px;
+                position: absolute;
+            }
         }
         & > .meter {
             flex: 0 1 auto;
@@ -105,10 +126,14 @@
             margin-top: -1px;
         }
     }
+    & > vscode-progress-ring {
+        margin: auto;
+    }
     & > .waveform {
         position: relative;
         flex: 1 1 auto;
         display: flex;
+        cursor: text;
 
         & > canvas {
             position: absolute;

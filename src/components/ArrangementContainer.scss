@@ -1,20 +1,15 @@
 .audio-editor-container .arrangement-container {
     display: flex;
+    flex-direction: column;
     flex: 1 1 auto;
-    overflow: auto;
+    overflow-y: auto;
+    overflow-x: hidden;
     position: relative;
 
-    padding-bottom: 30px;
-    --track-control-width: 160px;
-
-    & .arrangement-horizontal-scroller-container {
-        position: absolute;
-        display: flex;
-        flex-direction: column;
-        padding-left: var(--track-control-width);
-        bottom: 0px;
+    & .arrangement-ruler-container {
+        position: relative;
+        flex: 0 0 30px;
         height: 30px;
-        width: calc(100% - var(--track-control-width));
     }
 
     & .tracks-containers {
@@ -22,5 +17,73 @@
         flex-direction: column;
         flex: 1 1 auto;
         overflow: auto;
+        position: relative;
+    }
+
+    & .selection-overlay {
+        display: block;
+        position: absolute;
+        height: calc(100% - 30px);
+        margin-top: 30px;
+        width: calc(100% - var(--track-control-width) - 2px);
+        margin-left: calc(var(--track-control-width) + 2px);
+        cursor: text;
+        overflow: hidden;
+        pointer-events: none;
+
+        & > div.selrange {
+            position: absolute;
+            display: block;
+            height: 100%;
+            width: 0%;
+            background-color: rgba(255, 255, 255, 0.2);
+            pointer-events: none;
+        
+            &[hidden] {
+                display: none;
+            }
+            
+            & > div {
+                pointer-events: auto;
+            }
+
+            & > div.resize-handler-w {
+                position: absolute;
+                display: block;
+                top: 0;
+                left: -2px;
+                width: 4px;
+                height: 100%;
+                cursor: ew-resize;
+            }
+
+            & > div.resize-handler-e {
+                position: absolute;
+                display: block;
+                top: 0;
+                right: -2px;
+                width: 4px;
+                height: 100%;
+                cursor: ew-resize;
+            }
+        }
+
+        & > div.playhead-container {
+            display: block;
+            position: absolute;
+            pointer-events: none;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+
+            & > div.playhead {
+                display: block;
+                position: absolute;
+                width: 0px;
+                height: 100%;
+                border-right: 1px var(--vscode-minimap-findMatchHighlight) dashed;
+            }
+        }
+
     }
 }

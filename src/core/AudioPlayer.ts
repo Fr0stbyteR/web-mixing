@@ -145,6 +145,7 @@ export default class AudioPlayer {
             this.gainNodePool[i].gain.value = dbtoa(trackGains[i]);
             this.muteGainNodePool[i].connect(this.gainNodePool[i]);
             this.stereoPannerNodePool[i] = this.context.createStereoPanner();
+            this.stereoPannerNodePool[i].channelInterpretation = "discrete";
             this.stereoPannerNodePool[i].pan.value = trackPans[i];
             this.gainNodePool[i].connect(this.stereoPannerNodePool[i]);
             this.stereoPannerNodePool[i].connect(this.masterGainNode);
@@ -167,6 +168,35 @@ export default class AudioPlayer {
             this.peakAnalyserNodePool[i] = new PeakAnalyserNode(this.context);
             this.gainNodePool[i].connect(this.peakAnalyserNodePool[i]);
         }
+    }
+    async render(masterGain = 0) {
+        const { sampleRate, numberOfChannels, length, audioBuffer, state } = this.editor;
+        const { trackPans, trackGains } = state;
+        const context = new OfflineAudioContext({ length, sampleRate, numberOfChannels: 2 });
+        const stereoPannerNodePool: StereoPannerNode[] = [];
+        const gainNodePool: GainNode[] = [];
+        const bufferSourceNode = context.createBufferSource();
+        bufferSourceNode.channelCountMode = "explicit";
+        bufferSourceNode.channelInterpretation = "discrete";
+        bufferSourceNode.channelCount = numberOfChannels;
+        bufferSourceNode.buffer = audioBuffer;
+        const splitterNode = context.createChannelSplitter(numberOfChannels);
+        const masterGainNode = context.createGain();
+        masterGainNode.gain.value = dbtoa(masterGain);
+        for (let i = 0; i < numberOfChannels; i++) {
+            stereoPannerNodePool[i] = context.createStereoPanner();
+            stereoPannerNodePool[i].channelInterpretation = "discrete";
+            stereoPannerNodePool[i].pan.value = trackPans[i];
+            gainNodePool[i] = context.createGain();
+            gainNodePool[i].gain.value = dbtoa(trackGains[i]);
+            splitterNode.connect(gainNodePool[i], i, 0);
+            gainNodePool[i].connect(stereoPannerNodePool[i]);
+            stereoPannerNodePool[i].connect(masterGainNode);
+        }
+        bufferSourceNode.connect(splitterNode);
+        masterGainNode.connect(context.destination);
+        bufferSourceNode.start();
+        return context.startRendering();
     }
     async destroy() {
         // if (this.monitoring) this.stopMonitoring();

@@ -1,0 +1,31 @@
+.output-container {
+    flex: 0 0 40px;
+    display: flex;
+    position: relative;
+    flex-direction: row;
+
+    & .output-controls {
+        flex: 0 0 auto;
+        position: relative;
+        display: flex;
+        margin: auto;
+        gap: 4px;
+        padding: 4px;
+        & > * {
+            margin: auto 0px
+        }
+    }
+
+    & .master-meter-container {
+        flex: 1 1 auto;
+        height: 100%;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+    
+        & > .meter-container {
+            position: absolute;
+            width: 100%;
+        }
+    }
+}

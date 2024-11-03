@@ -2,14 +2,14 @@ import "./ArrangementHorizontalScroller.scss";
 import { useCallback, useContext, useRef } from "react";
 import { AudioEditorContext } from "./contexts";
 import { AudioEditorState } from "../core/AudioEditor";
-import { VSCodeButton } from "@vscode/webview-ui-toolkit/react";
 import { getCssFromPosition } from "../utils";
 
 type Props = Pick<AudioEditorState, "playhead" | "selRange" | "viewRange"> & {
     windowSize: number[];
+    scrollerSize: number;
 };
 
-const ArrangementHorizontalScroller: React.FunctionComponent<Props> = ({ playhead, viewRange, selRange, windowSize }) => {
+const ArrangementHorizontalScroller: React.FunctionComponent<Props> = ({ playhead, viewRange, selRange, scrollerSize }) => {
     const audioEditor = useContext(AudioEditorContext)!;
     const divViewRangeRef = useRef<HTMLDivElement>(null);
     const handleMoveMouseDown = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
@@ -115,7 +115,7 @@ const ArrangementHorizontalScroller: React.FunctionComponent<Props> = ({ playhea
         const ref = (origin.x - rect.left) / rect.width * audioEditor.length;
         audioEditor.zoomH(ref, e.deltaY < 0 ? 1 : -1);
     }, [audioEditor]);
-    const handleClickSelectAll = useCallback(() => audioEditor.setViewRangeToAll(), [audioEditor]);
+    const handleDoubleClick = useCallback(() => audioEditor.setViewRangeToAll(), [audioEditor]);
     const { length } = audioEditor;
     const range: [number, number] = [0, length];
     const [viewStart, viewEnd] = viewRange;
@@ -127,20 +127,13 @@ const ArrangementHorizontalScroller: React.FunctionComponent<Props> = ({ playhea
     const playheadLeft = getCssFromPosition(range, playhead);
     return (
         <div className="arrangement-horizontal-scroller">
-            <div className="editor-map-canvas-container" onWheel={handleWheel}>
+            <div className="editor-map-canvas-container" onWheel={handleWheel} onDoubleClick={handleDoubleClick} style={{ flex: `0 0 ${scrollerSize}px` }}>
                 <div className="editor-map-playhead" style={{ left: playheadLeft }}></div>
                 <div className="editor-map-selrange" style={{ left: selLeft, width: selWidth }} />
                 <div className="editor-map-viewrange" ref={divViewRangeRef} style={{ left: viewLeft, width: viewWidth }} onMouseDown={handleMoveMouseDown}>
                     <div className="resize-handler resize-handler-w" onMouseDown={handleResizeStartMouseDown} />
                     <div className="resize-handler resize-handler-e" onMouseDown={handleResizeEndMouseDown} />
                 </div>
-            </div>
-            <div className="editor-map-controls">
-                <span className="editor-map-select-all">
-                    <VSCodeButton tabIndex={-1} aria-label="View All" title="View All" appearance="icon" onClick={handleClickSelectAll}>
-                        <span className="codicon codicon-symbol-array"></span>
-                    </VSCodeButton>
-                </span>
             </div>
         </div>
     );

@@ -4,9 +4,9 @@
     flex: 0 0 auto;
     height: auto;
     align-items: center;
-    padding: 10px 4px;
+    padding: 6px 0px;
 
-    & > span {
+    & > div {
         align-self: center;
 
         &.time-input {
@@ -14,9 +14,13 @@
         }
     }
 
-    & > span.editor-main-player-controls-container {
-        flex: 1 1 auto;
-        margin-left: 80px;
+    & > .time-input-container {
+        flex: 0 0 60px;
+    }
+
+    & > .editor-main-player-controls-container {
+        flex: 0 0 100px;
+        margin-right: 2px;
         position: relative;
         white-space: nowrap;
         display: flex;
@@ -90,13 +94,12 @@
         }
     }
 
-    & > span.editor-add-component {
-        flex: 0 0 320px;
+    & > .arrangement-horizontal-scroller-container {
         position: relative;
+        flex: 0 0 calc(100% - var(--track-control-width) - 2px);
         display: flex;
-
-        & > vscode-dropdown {
-            width: 100%;
-        }
+        flex-direction: column;
+        height: 100%;
     }
+
 }

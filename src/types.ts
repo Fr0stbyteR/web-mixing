@@ -1,8 +1,11 @@
 import { AudioEditorState } from "./core/AudioEditor";
 
-export type QuestData = Record<string, { path: string, files: string[] }>
+export type QuestData = Record<string, { path: string; files: string[]; pans: number[] }>
 
 export type AudioUnit = "time" | "sample" | "measure";
+
+export type TrackSize = "tiny" | "small" | "medium" | "large" | "huge";
+
 export interface AudioEditorConfiguration {
     audioUnit: AudioUnit;
     fftSize: number;

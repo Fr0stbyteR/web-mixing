@@ -1,3 +1,4 @@
+/* eslint-disable prefer-spread */
 import { AudioUnit } from "./core/AudioEditor";
 
 /**
@@ -43,6 +44,15 @@ export const iNormExp = (x: number, e: number) => Math.max(0, x) ** (1.5 ** -e);
 export const normExp = (x: number, e: number) => Math.max(0, x) ** (1.5 ** e);
 
 export const isCloseToMultipleOf = (x: number, y: number) => 0.5 - Math.abs(-Math.abs((x / y) % 1) + 0.5) < 1e-10;
+
+export const getMaxOfArray = (arr: Float32Array) => {
+    let len = arr.length;
+    let max = -Infinity;
+    while (len--) {
+        max = arr[len] > max ? arr[len] : max;
+    }
+    return max;
+}
 
 export const absMax = (signal: TypedArray | number[], from = 0, length = signal.length) => {
     const slice = signal.slice(from, from + length).map(v => Math.abs(v)) as any;

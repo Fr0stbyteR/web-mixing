@@ -2,12 +2,14 @@
     --visualizer-right-spacing: 80px;
     --visualizer-configuration-spacing: 200px;
     --visualizer-monitor-spacing: 200px;
+    --track-control-width: 160px;
 
     display: flex;
     position: relative;
     flex-direction: column;
     width: 100%;
     flex: 0 0 100%;
+    overflow: hidden;
 
     & > .audio-editor-left-container {
         display: flex;
@@ -21,15 +23,4 @@
         }
     }
 
-    & > .master-meter-container {
-        flex: 0 0 40px;
-        position: relative;
-        display: flex;
-        flex-direction: column;
-
-        & > .meter-container {
-            position: absolute;
-            width: 100%;
-        }
-    }
 }

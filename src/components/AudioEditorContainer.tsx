@@ -1,10 +1,13 @@
 import "./AudioEditorContainer.scss";
-import { useCallback, useContext, useEffect, useState } from "react";
+import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import ArrangementContainer from "./ArrangementContainer";
 import MixerContainer from "./MixerContainer";
 import PlayerContainer from "./PlayerContainer";
 import { AudioEditorContext } from "./contexts";
 import LevelMeter from "./LevelMeter";
+import { TrackSize } from "../types";
+import { VSCodeButton } from "@vscode/webview-ui-toolkit/react";
+import OutputContainer from "./OutputContainer";
 
 const AudioEditorContainer: React.FunctionComponent = () => {
     const audioEditor = useContext(AudioEditorContext)!;
@@ -21,6 +24,9 @@ const AudioEditorContainer: React.FunctionComponent = () => {
     const [trackPans, setTrackPans] = useState(audioEditor.state.trackPans);
     const [masterGain, setMasterGain] = useState(audioEditor.state.masterGain);
     const [windowSize, setWindowSize] = useState([window.innerWidth, window.innerHeight]);
+    const [trackSize, setTrackSize] = useState<TrackSize>("small");
+    const [scrollerSize, setScrollerSize] = useState(windowSize[0] - 162);
+    const editorContainerRef = useRef<HTMLDivElement>(null);
     const phosphorColor = window.getComputedStyle(document.body).getPropertyValue("--vscode-menu-selectionBackground");
     const playheadColor = window.getComputedStyle(document.body).getPropertyValue("--vscode-minimap-findMatchHighlight");
     const gridColor = window.getComputedStyle(document.body).getPropertyValue("--vscode-menu-separatorBackground");
@@ -49,7 +55,10 @@ const AudioEditorContainer: React.FunctionComponent = () => {
         fadePathColor: "yellow",
         monospaceFont,
         textColor,
-        windowSize
+        windowSize,
+        scrollerSize,
+        trackSize,
+        setTrackSize
     };
     const handleResize = useCallback(() => {
         setWindowSize([window.innerWidth, window.innerHeight]);
@@ -82,14 +91,22 @@ const AudioEditorContainer: React.FunctionComponent = () => {
             window.removeEventListener("resize", handleResize);
         };
     }, [audioEditor, handleResize]);
+    useEffect(() => {
+        let preCalculatedScrollerSize = windowSize[0] - 162;
+        if (editorContainerRef.current) {
+            const trackControlWidth = +window.getComputedStyle(editorContainerRef.current).getPropertyValue("--track-control-width").replace("px", "");
+            preCalculatedScrollerSize = windowSize[0] - trackControlWidth - 2;
+            const waveform = editorContainerRef.current.getElementsByClassName("waveform")[0];
+            if (waveform) preCalculatedScrollerSize = waveform.getBoundingClientRect().width;
+        }
+        setScrollerSize(preCalculatedScrollerSize);
+    }, [windowSize, trackSize]);
     return (
-        <div id="audio-editor-container" className="audio-editor-container">
+        <div id="audio-editor-container" className="audio-editor-container" ref={editorContainerRef}>
             <PlayerContainer {...componentProps} />
             <ArrangementContainer {...componentProps} />
             <MixerContainer />
-            <div className="master-meter-container">
-                <LevelMeter {...componentProps} minDB={-70} maxDB={5} numberOfChannels={2} peakAnalyserNode={audioEditor.player!.masterPeakAnalyserNode} showRuler />
-            </div>
+            <OutputContainer {...componentProps} peakAnalyserNode={audioEditor.player!.masterPeakAnalyserNode} />
         </div>
     );
 };
