@@ -11,7 +11,7 @@ type Props = {
     audioContext?: AudioContext;
 };
 
-const REPOSITORY_URL = "http://localhost/web-mixing-data/list.json";
+const REPOSITORY_URL = "../../web-mixing-data/list.json";
 const AUDIO_CONTEXT = new AudioContext({ latencyHint: 0.0001 });
 
 const App: React.FunctionComponent<Props> = ({ repositoryUrl = REPOSITORY_URL, audioContext = AUDIO_CONTEXT }) => {
@@ -21,13 +21,18 @@ const App: React.FunctionComponent<Props> = ({ repositoryUrl = REPOSITORY_URL, a
     const [loaded, setLoaded] = useState(0);
 
     const quest = new URLSearchParams(location.search).get("q");
+    const repo = new URLSearchParams(location.search).get("list") || repositoryUrl;
     useEffect(() => {
         (async () => {
-            const dataResponse = await fetch(repositoryUrl);
-            const data: QuestData = await dataResponse.json();
-            setQuestData(quest ? data[quest] || null : null);
+            try {
+                const dataResponse = await fetch(repo);
+                const data: QuestData = await dataResponse.json();
+                setQuestData(quest ? data[quest] || null : null);
+            } catch (error) {
+                setError((error as Error).toString());
+            }
         })();
-    }, [quest, repositoryUrl]);
+    }, [quest, repo, repositoryUrl]);
     useEffect(() => {
         (async () => {
             if (!quest) setError("Data not found");
@@ -35,7 +40,7 @@ const App: React.FunctionComponent<Props> = ({ repositoryUrl = REPOSITORY_URL, a
             setError(null);
             const { files, path, pans } = questData;
             const audioBuffers = await Promise.all(files.map(async (fileName) => {
-                const url = new URL(`${path}/${fileName}`, repositoryUrl);
+                const url = new URL(`${path}/${fileName}`, new URL(repositoryUrl, location.href));
                 const response = await fetch(url);
                 const arrayBuffer = await response.arrayBuffer();
                 setLoaded(v => v + 1);
