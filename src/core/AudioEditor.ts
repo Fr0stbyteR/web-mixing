@@ -187,7 +187,14 @@ class AudioEditor extends TypedEventEmitter<AudioEditorEventMap> {
     }
     setGain(channel: number, value: number) {
         const array = this.state.trackGains.slice();
-        array[channel] = value;
+        array[channel] = +value.toFixed(1);
+        this.setState({ trackGains: array });
+    }
+    setGains(gains: number[]) {
+        const array = this.state.trackGains.slice();
+        for (let i = 0; i < Math.min(gains.length, array.length); i++) {
+            array[i] = +gains[i].toFixed(1);
+        }
         this.setState({ trackGains: array });
     }
     setSolo(channel: number, value: boolean) {
@@ -288,7 +295,7 @@ class AudioEditor extends TypedEventEmitter<AudioEditorEventMap> {
         this.player!.stop();
     }
     setMasterGain(masterGain: number) {
-        this.setState({ masterGain });
+        this.setState({ masterGain: +masterGain.toFixed(1) });
     }
     handlePlayerEnded(playhead: number) {
         const playing: AudioPlayingState = "stopped";

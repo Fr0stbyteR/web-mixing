@@ -101,6 +101,16 @@ const AudioEditorContainer: React.FunctionComponent = () => {
         }
         setScrollerSize(preCalculatedScrollerSize);
     }, [windowSize, trackSize]);
+    useEffect(() => {
+        const url = new URL(location.href);
+        url.searchParams.set("g", trackGains.join("_"));
+        window.history.pushState({ trackGains }, "", url);
+    }, [trackGains]);
+    useEffect(() => {
+        const url = new URL(location.href);
+        url.searchParams.set("m", masterGain.toString());
+        window.history.pushState({ masterGain }, "", url);
+    }, [masterGain]);
     return (
         <div id="audio-editor-container" className="audio-editor-container" ref={editorContainerRef}>
             <PlayerContainer {...componentProps} />

@@ -19,9 +19,9 @@ const App: React.FunctionComponent<Props> = ({ repositoryUrl = REPOSITORY_URL, a
     const [questData, setQuestData] = useState<QuestData[string] | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [loaded, setLoaded] = useState(0);
-
-    const quest = new URLSearchParams(location.search).get("q");
-    const repo = new URLSearchParams(location.search).get("list") || repositoryUrl;
+    const { searchParams } = new URL(location.href);
+    const quest = searchParams.get("q");
+    const repo = searchParams.get("list") || repositoryUrl;
     useEffect(() => {
         (async () => {
             try {
@@ -38,6 +38,9 @@ const App: React.FunctionComponent<Props> = ({ repositoryUrl = REPOSITORY_URL, a
             if (!quest) setError("Data not found");
             if (!quest || !questData) return;
             setError(null);
+            const { searchParams } = new URL(location.href);
+            const gains = searchParams.get("g")?.split("_").map(v => +v || 0);
+            const masterGain = searchParams.get("m");
             const { files, path, pans } = questData;
             const audioBuffers = await Promise.all(files.map(async (fileName) => {
                 const url = new URL(`${path}/${fileName}`, new URL(repositoryUrl, location.href));
@@ -46,8 +49,19 @@ const App: React.FunctionComponent<Props> = ({ repositoryUrl = REPOSITORY_URL, a
                 setLoaded(v => v + 1);
                 return audioContext.decodeAudioData(arrayBuffer);
             }));
+            const trackGains = new Array(audioBuffers.length).fill(0);
+            const trackPans = new Array(audioBuffers.length).fill(0);
+            for (let i = 0; i < audioBuffers.length; i++) {
+                if (gains) trackGains[i] = gains[i] || 0;
+                if (pans) trackPans[i] = pans[i] || 0;
+            }
             const audioEditor = await AudioEditor.fromData(audioBuffers.map(ab => ab.getChannelData(0)), audioContext, quest);
-            audioEditor.setState({ trackNames: files, trackPans: pans ?? new Array(audioBuffers.length).fill(0) });
+            audioEditor.setState({
+                trackNames: files,
+                trackPans,
+                trackGains,
+                ...(masterGain ? { masterGain: +masterGain || 0 } : {})
+            });
             setAudioEditor(audioEditor);
             const handleKeyDown = async (e: KeyboardEvent) => {
                 if (e.key !== " ") return;

@@ -53,7 +53,7 @@ const OutputContainer: React.FunctionComponent<Props> = (props) => {
             const absArray = b.map(Math.abs) as any;
             max = Math.max(max, getMaxOfArray(absArray));
         });
-        const gain = atodb(1 / max);
+        const gain = atodb(1 / max) - 0.1;
         audioEditor.setMasterGain(gain);
     }, [audioEditor]);
     const handleChangeGain = useCallback((gain: number) => audioEditor.setMasterGain(gain), [audioEditor]);
