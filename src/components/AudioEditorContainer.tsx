@@ -8,6 +8,7 @@ import LevelMeter from "./LevelMeter";
 import { TrackSize } from "../types";
 import { VSCodeButton } from "@vscode/webview-ui-toolkit/react";
 import OutputContainer from "./OutputContainer";
+import AudioEditor from "../core/AudioEditor";
 
 const AudioEditorContainer: React.FunctionComponent = () => {
     const audioEditor = useContext(AudioEditorContext)!;
@@ -23,6 +24,7 @@ const AudioEditorContainer: React.FunctionComponent = () => {
     const [trackSolos, setTrackSolos] = useState(audioEditor.state.trackSolos);
     const [trackPans, setTrackPans] = useState(audioEditor.state.trackPans);
     const [masterGain, setMasterGain] = useState(audioEditor.state.masterGain);
+    const [grouping, setGrouping] = useState(audioEditor.state.grouping);
     const [windowSize, setWindowSize] = useState([window.innerWidth, window.innerHeight]);
     const [trackSize, setTrackSize] = useState<TrackSize>("small");
     const [scrollerSize, setScrollerSize] = useState(windowSize[0] - 162);
@@ -45,6 +47,7 @@ const AudioEditorContainer: React.FunctionComponent = () => {
         trackSolos,
         trackPans,
         masterGain,
+        grouping,
         configuration,
         phosphorColor,
         playheadColor,
@@ -75,6 +78,7 @@ const AudioEditorContainer: React.FunctionComponent = () => {
         audioEditor.on("trackSolos", setTrackSolos);
         audioEditor.on("trackPans", setTrackPans);
         audioEditor.on("masterGain", setMasterGain);
+        audioEditor.on("grouping", setGrouping);
         window.addEventListener("resize", handleResize);
         return () => {
             audioEditor.off("playhead", setPlayhead);
@@ -88,6 +92,7 @@ const AudioEditorContainer: React.FunctionComponent = () => {
             audioEditor.off("trackSolos", setTrackSolos);
             audioEditor.off("trackPans", setTrackPans);
             audioEditor.off("masterGain", setMasterGain);
+            audioEditor.off("grouping", setGrouping);
             window.removeEventListener("resize", handleResize);
         };
     }, [audioEditor, handleResize]);
@@ -111,6 +116,11 @@ const AudioEditorContainer: React.FunctionComponent = () => {
         url.searchParams.set("m", masterGain.toString());
         window.history.pushState({ masterGain }, "", url);
     }, [masterGain]);
+    useEffect(() => {
+        const url = new URL(location.href);
+        url.searchParams.set("gr", AudioEditor.toGroupingString(grouping));
+        window.history.pushState({ grouping }, "", url);
+    }, [grouping]);
     return (
         <div id="audio-editor-container" className="audio-editor-container" ref={editorContainerRef}>
             <PlayerContainer {...componentProps} />

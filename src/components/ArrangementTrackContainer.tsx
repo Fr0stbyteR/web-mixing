@@ -12,6 +12,8 @@ import { setCanvasToFullSize } from "../utils";
 type Props = Pick<VisualizationStyleOptions, "gridRulerColor" | "gridColor" | "textColor" | "monospaceFont"> & {
     size?: "tiny" | "small" | "medium" | "large" | "huge",
     index: number;
+    position: number;
+    groupIndex: number;
     total: number;
     numberOfChannels: number;
     name: string;
@@ -19,13 +21,14 @@ type Props = Pick<VisualizationStyleOptions, "gridRulerColor" | "gridColor" | "t
     mute: boolean;
     solo: boolean;
     pan: number;
+    linked: boolean;
     viewRange: [number, number];
     windowSize: number[];
 }
 
 const ArrangementTrackContainer: React.FunctionComponent<Props> = (props) => {
-    const { size = "medium", index, total, name, gain, mute, solo, pan, viewRange, windowSize } = props;
-    const hue = index / Math.min(10, total) * 360 % 360;
+    const { size = "medium", index, position, groupIndex, total, name, gain, mute, solo, pan, linked, viewRange, windowSize } = props;
+    const hue = groupIndex / Math.min(10, total) * 360 % 360;
     const backgroundColor = `hsl(${~~(hue)}deg 50% 30% / 10%)`;
     const phosphorColor = `hsl(${~~(hue)}deg 50% 50%)`;
     const audioEditor = useContext(AudioEditorContext)!;
@@ -36,6 +39,7 @@ const ArrangementTrackContainer: React.FunctionComponent<Props> = (props) => {
     const containerRef = useRef<HTMLDivElement>(null);
     const handleClickMute = useCallback(() => audioEditor.setMute(index, !mute), [audioEditor, index, mute]);
     const handleClickSolo = useCallback(() => audioEditor.setSolo(index, !solo), [audioEditor, index, solo]);
+    const handleClickLink = useCallback(() => audioEditor.setLinked(position, !linked), [audioEditor, position, linked]);
     const handleGainChange = useCallback((gain: number) => audioEditor.setGain(index, gain), [audioEditor, index]);
     const minDB = -70;
     const maxDB = 20;
@@ -184,6 +188,11 @@ const ArrangementTrackContainer: React.FunctionComponent<Props> = (props) => {
                     <div className="pan-indicator" style={{ width: panWidth, left: panLeft }}></div>
                 </div>
                 <div className="controls">
+                    <div className={`linked${linked ? " active" : ""}`}>
+                        <VSCodeButton disabled={position === 0} tabIndex={-1} aria-label="Link" title="Link" appearance={size === "tiny" ? "icon" : "secondary"} onClick={handleClickLink}>
+                            <span className="codicon codicon-link"></span>
+                        </VSCodeButton>
+                    </div>
                     <div className={`mute${mute ? " active" : ""}`}>
                         <VSCodeButton tabIndex={-1} aria-label="Mute" title="Mute" appearance={size === "tiny" ? "icon" : "secondary"} onClick={handleClickMute}>
                             <span>M</span>
@@ -194,11 +203,11 @@ const ArrangementTrackContainer: React.FunctionComponent<Props> = (props) => {
                             <span>S</span>
                         </VSCodeButton>
                     </div>
-                    <GainInput gain={gain} unit="dB" onChange={handleGainChange} onAdjust={handleGainChange} />
+                    <GainInput style={linked ? { pointerEvents: "none" } : {}} gain={gain} unit="dB" onChange={handleGainChange} onAdjust={handleGainChange} />
                 </div>
                 <div className="meter">
                     <LevelMeter {...props} peakAnalyserNode={audioEditor.player!.peakAnalyserNodePool[index]} showRuler={false} minDB={minDB} maxDB={maxDB} />
-                    <div className="gain-slider" style={{ left: `${(gain - minDB) / (maxDB - minDB) * 100}%` }} onMouseDown={handleMouseDownGainController} onDoubleClick={handleDoubleClickGainController} />
+                    {linked ? null : <div className="gain-slider" style={{ left: `${(gain - minDB) / (maxDB - minDB) * 100}%` }} onMouseDown={handleMouseDownGainController} onDoubleClick={handleDoubleClickGainController} />}
                 </div>
             </div>
             {

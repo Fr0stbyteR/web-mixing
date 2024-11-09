@@ -35,3 +35,8 @@ export interface VisualizationOptions extends VisualizationStyleOptions, Pick<Au
     monitoring: boolean;
     rerenderId: number;
 }
+
+export type GroupingItem = {
+    id: number;
+    linked: boolean;
+};

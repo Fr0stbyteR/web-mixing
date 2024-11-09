@@ -41,6 +41,8 @@ const App: React.FunctionComponent<Props> = ({ repositoryUrl = REPOSITORY_URL, a
             const { searchParams } = new URL(location.href);
             const gains = searchParams.get("g")?.split("_").map(v => +v || 0);
             const masterGain = searchParams.get("m");
+            const groupingString = searchParams.get("gr");
+            const grouping = groupingString ? AudioEditor.fromGroupingString(groupingString) : [];
             const { files, path, pans } = questData;
             const audioBuffers = await Promise.all(files.map(async (fileName) => {
                 const url = new URL(`${path}/${fileName}`, new URL(repositoryUrl, location.href));
@@ -54,13 +56,15 @@ const App: React.FunctionComponent<Props> = ({ repositoryUrl = REPOSITORY_URL, a
             for (let i = 0; i < audioBuffers.length; i++) {
                 if (gains) trackGains[i] = gains[i] || 0;
                 if (pans) trackPans[i] = pans[i] || 0;
+                if (grouping.findIndex(e => e.id === i) === -1) grouping.push({ id: i, linked: false });
             }
             const audioEditor = await AudioEditor.fromData(audioBuffers.map(ab => ab.getChannelData(0)), audioContext, quest);
             audioEditor.setState({
                 trackNames: files,
                 trackPans,
                 trackGains,
-                ...(masterGain ? { masterGain: +masterGain || 0 } : {})
+                ...(masterGain ? { masterGain: +masterGain || 0 } : {}),
+                ...(grouping ? { grouping: grouping } : {})
             });
             setAudioEditor(audioEditor);
             const handleKeyDown = async (e: KeyboardEvent) => {

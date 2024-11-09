@@ -2,7 +2,7 @@ import TypedEventEmitter from "@shren/typed-event-emitter";
 import OperableAudioBuffer from "./OperableAudioBuffer";
 import AudioPlayer from "./AudioPlayer";
 import { dbtoa } from "../utils";
-import { AudioEditorConfiguration, AudioUnit } from "../types";
+import { AudioEditorConfiguration, AudioUnit, GroupingItem } from "../types";
 
 export type {
     AudioEditorConfiguration,
@@ -26,6 +26,7 @@ export interface AudioEditorState {
     trackSolos: boolean[];
     trackPans: number[];
     masterGain: number;
+    grouping: GroupingItem[];
 }
 
 export interface AudioEditorEventMap extends Omit<AudioEditorState, "isReady"> {
@@ -70,7 +71,8 @@ class AudioEditor extends TypedEventEmitter<AudioEditorEventMap> {
         trackMutes: [],
         trackSolos: [],
         trackPans: [],
-        masterGain: 0
+        masterGain: 0,
+        grouping: []
     };
     get name() {
         return this._name;
@@ -129,7 +131,8 @@ class AudioEditor extends TypedEventEmitter<AudioEditorEventMap> {
             trackMutes: new Array(this.numberOfChannels).fill(false),
             trackSolos: new Array(this.numberOfChannels).fill(false),
             trackPans: new Array(this.numberOfChannels).fill(0),
-            viewRange: [0, this.length]
+            viewRange: [0, this.length],
+            grouping: new Array(this.numberOfChannels).fill(0).map((v, id) => ({ id, linked: false }))
         });
     }
     private async initPlayer() {
@@ -187,7 +190,20 @@ class AudioEditor extends TypedEventEmitter<AudioEditorEventMap> {
     }
     setGain(channel: number, value: number) {
         const array = this.state.trackGains.slice();
-        array[channel] = +value.toFixed(1);
+        const db = +value.toFixed(1);
+        let currId = channel;
+        let currIndex: number;
+        let next: number | undefined;
+        let nextGrouping: GroupingItem | undefined;
+        do {
+            array[currId] = db;
+            currIndex = this.state.grouping.findIndex(({ id }) => id === currId);
+            if (currIndex === -1) throw new Error(`Cannot find id ${currId} in the grouping table.`);
+            next = this.state.grouping[currIndex + 1]?.id;
+            if (typeof next !== "number") break;
+            currId = next;
+            nextGrouping = this.state.grouping.find(({ id }) => id === next);
+        } while (nextGrouping?.linked)
         this.setState({ trackGains: array });
     }
     setGains(gains: number[]) {
@@ -210,6 +226,13 @@ class AudioEditor extends TypedEventEmitter<AudioEditorEventMap> {
     setLoop(loop: boolean) {
         this.setState({ loop });
         this.emit("loop", loop);
+    }
+    setLinked(position: number, linked: boolean) {
+        if (position === 0) return;
+        const array = this.state.grouping.slice();
+        array[position] = { ...array[position], linked };
+        if (linked) this.setGain(array[position].id, this.state.trackGains[array[position - 1].id]);
+        this.setState({ grouping: array });
     }
     async setPlayhead(playheadIn: number, fromPlayer?: boolean) {
         const shouldReplay = !fromPlayer && this.state.playing === "playing";
@@ -303,6 +326,14 @@ class AudioEditor extends TypedEventEmitter<AudioEditorEventMap> {
         this.emit("playing", playing);
         this.setPlayhead(playhead);
     };
+    static fromGroupingString(str: string) {
+        const ids = str.split(/[-_]/).map(v => +v);
+        const linked = str.split("_").map(s => s.split("-").map((v, i) => i > 0)).flat();
+        return ids.map((id, i) => ({ id, linked: linked[i] }) as GroupingItem);
+    }
+    static toGroupingString(grouping: GroupingItem[]) {
+        return grouping.map((chain, i) => `${i === 0 ? "" : chain.linked ? "-" : "_"}${chain.id}`).join("");
+    }
 }
 
 export default AudioEditor;

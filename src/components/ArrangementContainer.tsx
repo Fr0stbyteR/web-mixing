@@ -7,7 +7,7 @@ import { TrackSize, VisualizationStyleOptions } from "../types";
 import { getCssFromPosition } from "../utils";
 import ArrangementRuler from "./ArrangementRuler";
 
-type Props = Pick<AudioEditorState, "masterGain" | "trackNames" | "trackGains" | "trackMutes" | "trackPans" | "trackSolos" | "loop" | "playhead" | "selRange" | "viewRange">
+type Props = Pick<AudioEditorState, "masterGain" | "trackNames" | "trackGains" | "trackMutes" | "trackPans" | "trackSolos" | "loop" | "playhead" | "selRange" | "viewRange" | "grouping">
 & Pick<VisualizationStyleOptions, "gridRulerColor" | "gridColor" | "textColor" | "monospaceFont">
 & {
     configuration: AudioEditorConfiguration;
@@ -18,27 +18,34 @@ type Props = Pick<AudioEditorState, "masterGain" | "trackNames" | "trackGains" |
 };
 
 const ArrangementContainer: React.FunctionComponent<Props> = (props) => {
-    const { trackNames, trackGains, trackMutes, trackSolos, trackPans, playhead, selRange, viewRange, windowSize, scrollerSize, trackSize, setTrackSize } = props;
+    const { trackNames, trackGains, trackMutes, trackSolos, trackPans, playhead, selRange, viewRange, grouping, windowSize, scrollerSize, trackSize, setTrackSize } = props;
     const audioEditor = useContext(AudioEditorContext)!;
     const [newWindowSize, setNewWindowSize] = useState(windowSize);
     const selectionOverlayRef = useRef<HTMLDivElement>(null);
     const { numberOfChannels } = audioEditor;
     const tracksContainers = [];
-    for (let i = 0; i < numberOfChannels; i++) {
+    let groupIndex = 0;
+    for (let i = 0; i < grouping.length; i++) {
+        const { id, linked } = grouping[i];
+        if (i > 0 && !linked) groupIndex++;
         const trackProps = {
             ...props,
-            index: i,
+            key: id,
+            index: id,
+            position: i,
+            groupIndex,
             total: numberOfChannels,
             numberOfChannels: 1,
-            name: trackNames[i] || `${i + 1}`,
-            gain: trackGains[i],
-            mute: trackMutes[i],
-            solo: trackSolos[i],
-            pan: trackPans[i],
+            name: trackNames[id] || `${id + 1}`,
+            gain: trackGains[id],
+            mute: trackMutes[id],
+            solo: trackSolos[id],
+            pan: trackPans[id],
+            linked,
             size: trackSize,
             windowSize: newWindowSize
         };
-        tracksContainers[i] = <ArrangementTrackContainer {...trackProps} />
+        tracksContainers.push(<ArrangementTrackContainer {...trackProps} />);
     }
     const handleResizeStartMouseDown = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
         if (!selectionOverlayRef.current || !selRange) return;
