@@ -109,17 +109,17 @@ const AudioEditorContainer: React.FunctionComponent = () => {
     useEffect(() => {
         const url = new URL(location.href);
         url.searchParams.set("g", trackGains.join("_"));
-        window.history.pushState({ trackGains }, "", url);
+        window.history.replaceState({ trackGains }, "", url);
     }, [trackGains]);
     useEffect(() => {
         const url = new URL(location.href);
         url.searchParams.set("m", masterGain.toString());
-        window.history.pushState({ masterGain }, "", url);
+        window.history.replaceState({ masterGain }, "", url);
     }, [masterGain]);
     useEffect(() => {
         const url = new URL(location.href);
         url.searchParams.set("gr", AudioEditor.toGroupingString(grouping));
-        window.history.pushState({ grouping }, "", url);
+        window.history.replaceState({ grouping }, "", url);
     }, [grouping]);
     return (
         <div id="audio-editor-container" className="audio-editor-container" ref={editorContainerRef}>
