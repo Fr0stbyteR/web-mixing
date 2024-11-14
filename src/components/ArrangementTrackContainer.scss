@@ -5,16 +5,33 @@
     border-top: 1px var(--vscode-input-border) solid;
     transition: all 0.2s;
 
+    &:not(.linked) {
+        & > .controls-container {
+            & > .name {
+                cursor: grab;
+            }
+        }
+    }
+    &.moving {
+        position: absolute;
+        transition: none;
+        z-index: 1;
+        width: 100%;
+    }
+
     &:last-child {
         border-bottom: 1px var(--vscode-input-border) solid;
     }
 
     &.tiny {
-        flex: 0 0 16px;
+        flex: 0 0 20px;
         & > .controls-container {
             gap: 2px;
             flex-direction: row;
             & > .name {
+                background-color: rgba(255, 255, 255, 0.5);
+            }
+            & > .empty {
                 display: none;
             }
             & > .pan {
@@ -53,15 +70,19 @@
 
     &.small {
         flex: 0 0 100px;
+        height: 100px;
     }
     &.medium {
         flex: 0 0 160px;
+        height: 160px;
     }
     &.large {
         flex: 0 0 300px;
+        height: 300px;
     }
     &.huge {
         flex: 0 0 600px;
+        height: 600px;
     }
     & > .controls-container {
         flex: 0 0 calc(var(--track-control-width) - 8px);
@@ -74,11 +95,31 @@
         overflow: hidden;
 
         & > .name {
+            display: flex;
             padding: 2px;
+            gap: 2px;
+            flex: 0 0 auto;
+            & > span {
+                flex: 0 1 auto;
+                overflow: hidden;
+                white-space: nowrap;
+                text-overflow: ellipsis;
+
+                &.codicon {
+                    font-size: 12px;
+                    flex: 0 0 auto;
+                    margin: auto 0px;
+                    opacity: 0.5;
+                }
+            }
+
+            &:hover > span.codicon {
+                opacity: 1;
+            }
+        }
+
+        & > .empty {
             flex: 1 1 auto;
-            overflow: hidden;
-            white-space: nowrap;
-            text-overflow: ellipsis;
         }
         & > .pan {
             flex: 0 0 10px;

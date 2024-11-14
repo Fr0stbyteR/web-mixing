@@ -18,6 +18,35 @@
         flex: 1 1 auto;
         overflow: auto;
         position: relative;
+
+        & > div.track-move-target {
+            border-top: 1px var(--vscode-input-border) solid;
+            &:last-child {
+                border-bottom: 1px var(--vscode-input-border) solid;
+            }
+            &.tiny {
+                flex: 0 0 20px;
+            }
+            &.small {
+                flex: 0 0 100px;
+            }
+            &.medium {
+                flex: 0 0 160px;
+            }
+            &.large {
+                flex: 0 0 300px;
+            }
+            &.huge {
+                flex: 0 0 600px;
+            }
+        }
+
+        & > .moving-tracks-container {
+            display: flex;
+            flex-direction: column;
+            position: absolute;
+            width: 100%;
+        }
     }
 
     & .selection-overlay {

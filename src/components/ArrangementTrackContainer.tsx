@@ -24,10 +24,11 @@ type Props = Pick<VisualizationStyleOptions, "gridRulerColor" | "gridColor" | "t
     linked: boolean;
     viewRange: [number, number];
     windowSize: number[];
+    setMovingTrack: React.Dispatch<React.SetStateAction<[number, number, number] | null>>;
 }
 
 const ArrangementTrackContainer: React.FunctionComponent<Props> = (props) => {
-    const { size = "medium", index, position, groupIndex, total, name, gain, mute, solo, pan, linked, viewRange, windowSize } = props;
+    const { size = "medium", index, position, groupIndex, total, name, gain, mute, solo, pan, linked, viewRange, windowSize, setMovingTrack } = props;
     const hue = groupIndex / Math.min(10, total) * 360 % 360;
     const backgroundColor = `hsl(${~~(hue)}deg 50% 30% / 10%)`;
     const phosphorColor = `hsl(${~~(hue)}deg 50% 50%)`;
@@ -35,6 +36,7 @@ const ArrangementTrackContainer: React.FunctionComponent<Props> = (props) => {
     const [dataSlice, setDataSlice] = useState<VectorDataSlice>();
     const [calculating, setCalculating] = useState(false);
     const [needRender, setNeedRender] = useState(false);
+    const [moving, setMoving] = useState(false);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const handleClickMute = useCallback(() => audioEditor.setMute(index, !mute), [audioEditor, index, mute]);
@@ -166,6 +168,89 @@ const ArrangementTrackContainer: React.FunctionComponent<Props> = (props) => {
         const ref = viewStart + (origin.x - rect.left) / rect.width * viewLength;
         audioEditor.zoomH(ref, e.deltaY < 0 ? 1 : -1);
     }, [audioEditor, viewRange]);
+    const handleNameMouseDown = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+        if (linked) return;
+        if (!containerRef.current) return;
+        const nameSpan = e.currentTarget;
+        nameSpan.style.cursor = "grabbing";
+        nameSpan.style.userSelect = "none";
+        const container = containerRef.current;
+        const containerRect = container.getBoundingClientRect();
+        const parent = containerRef.current.parentElement!;
+        const parentRect = parent.getBoundingClientRect();
+        const deltaY = e.clientY - containerRect.y;
+        // container.style.top = `${e.clientY - parentRect.y - deltaY + parent.scrollTop}px`;
+        // setMoving(true);
+        setMovingTrack([position, position, e.clientY - parentRect.y - deltaY + parent.scrollTop]);
+        const movingContainer = parent.getElementsByClassName("moving-tracks-container")[0] as HTMLDivElement;
+        if (movingContainer) {
+            movingContainer.style.top = `${e.clientY - parentRect.y - deltaY + parent.scrollTop}px`;
+        }
+        const handleMouseMove = (e: MouseEvent) => {
+            const top = e.clientY - parentRect.y - deltaY + parent.scrollTop;
+            if (movingContainer) {
+                movingContainer.style.top = `${e.clientY - parentRect.y - deltaY + parent.scrollTop}px`;
+            }
+            const tracks = [...parent.children].filter(d => d.classList.contains("arrangement-track-container"));
+            const hoverTrackIndex = tracks.findIndex((d) => {
+                const rect = d.getBoundingClientRect();
+                return rect.top <= e.clientY && rect.bottom > e.clientY;
+            });
+            if (hoverTrackIndex >= 0) {
+                const hoverTrack = tracks[hoverTrackIndex];
+                const rect = hoverTrack.getBoundingClientRect();
+                const { grouping } = audioEditor.state;
+                const tracksMoving = new Array(grouping.length).fill(false);
+                tracksMoving[position] = true;
+                for (let i = position; i >= 0; i--) {
+                    if (grouping[i].linked) tracksMoving[i] = true;
+                    else break;
+                }
+                for (let i = position + 1; i < grouping.length; i++) {
+                    if (grouping[i].linked) tracksMoving[i] = true;
+                    else break;
+                }
+                const tracksOnPlace = grouping.filter((v, i) => !tracksMoving[i]);
+                if (e.clientY < rect.top + rect.height / 2 && !tracksOnPlace[hoverTrackIndex].linked) setMovingTrack([position, hoverTrackIndex, top]);
+                else if (e.clientY >= rect.top + rect.height / 2 && !tracksOnPlace[hoverTrackIndex + 1]?.linked) setMovingTrack([position, hoverTrackIndex + 1, top]);
+                else setMovingTrack((prev) => prev ? [prev[0], prev[1], top] : prev);
+            } else {
+                setMovingTrack((prev) => prev ? [prev[0], prev[1], top] : prev);
+            }
+            e.stopPropagation();
+            e.preventDefault();
+        };
+        const handleMouseUp = (e: MouseEvent) => {
+            e.stopPropagation();
+            e.preventDefault();
+            nameSpan.style.cursor = "grab";
+            nameSpan.style.userSelect = "auto";
+            setMovingTrack((movingTrack) => {
+                if (!movingTrack) return null;
+                const [from, to] = movingTrack;
+                const { grouping } = audioEditor.state;
+                const tracksMoving = new Array(grouping.length).fill(false);
+                tracksMoving[from] = true;
+                for (let i = from; i >= 0; i--) {
+                    if (grouping[i].linked) tracksMoving[i] = true;
+                    else break;
+                }
+                for (let i = from + 1; i < grouping.length; i++) {
+                    if (grouping[i].linked) tracksMoving[i] = true;
+                    else break;
+                }
+                const newGrouping = grouping.filter((v, i) => !tracksMoving[i]);
+                newGrouping.splice(to, 0, ...grouping.filter((v, i) => tracksMoving[i]));
+                audioEditor.setState({ grouping: newGrouping });
+                return null;
+            });
+            // setMoving(false);
+            document.removeEventListener("mousemove", handleMouseMove);
+            document.removeEventListener("mouseup", handleMouseUp);
+        };
+        document.addEventListener("mousemove", handleMouseMove);
+        document.addEventListener("mouseup", handleMouseUp);
+    }, [audioEditor, linked, position, setMovingTrack]);
     useEffect(() => {
         (async () => {
             setCalculating(true);
@@ -177,13 +262,19 @@ const ArrangementTrackContainer: React.FunctionComponent<Props> = (props) => {
             setDataSlice({ ...ds, vectors });
         })();
     }, [audioEditor, index]);
-    useEffect(() => paint(canvasRef), [paint, windowSize]);
+    useEffect(() => {
+        setTimeout(paint, 200, canvasRef);
+    }, [paint, windowSize]);
     const panLeft = `${Math.min((pan + 1) * 0.5, 0.5) * 100}%`;
     const panWidth = `${Math.abs(pan) * 50}%`;
     return (
-        <div style={{ backgroundColor }} className={`arrangement-track-container ${size}`} ref={containerRef}>
+        <div style={{ backgroundColor }} className={`arrangement-track-container ${size}${moving ? " moving" : ""}${linked ? " linked" : ""}`} ref={containerRef}>
             <div className="controls-container">
-                <div className="name" title={name}>{name}</div>
+                <div className="name" title={name} onMouseDown={handleNameMouseDown}>
+                    {linked ? null : <span className="codicon codicon-move"></span>}
+                    <span>{name}</span>
+                </div>
+                <div className="empty"></div>
                 <div className="pan" title={`Pan: ${pan.toFixed(2)}`}>
                     <div className="pan-indicator" style={{ width: panWidth, left: panLeft }}></div>
                 </div>

@@ -21,12 +21,27 @@ const ArrangementContainer: React.FunctionComponent<Props> = (props) => {
     const { trackNames, trackGains, trackMutes, trackSolos, trackPans, playhead, selRange, viewRange, grouping, windowSize, scrollerSize, trackSize, setTrackSize } = props;
     const audioEditor = useContext(AudioEditorContext)!;
     const [newWindowSize, setNewWindowSize] = useState(windowSize);
+    const [movingTrack, setMovingTrack] = useState<[number, number, number] | null>(null);
     const selectionOverlayRef = useRef<HTMLDivElement>(null);
     const { numberOfChannels } = audioEditor;
-    const tracksContainers = [];
+    const tracksContainers: JSX.Element[] = [];
+    const movingTracks: JSX.Element[] = [];
     let groupIndex = 0;
+    const tracksMoving = new Array(grouping.length).fill(false);
+    if (typeof movingTrack?.[0] === "number") {
+        tracksMoving[movingTrack[0]] = true;
+        for (let i = movingTrack?.[0]; i >= 0; i--) {
+            if (grouping[i].linked) tracksMoving[i] = true;
+            else break;
+        }
+        for (let i = movingTrack?.[0] + 1; i < grouping.length; i++) {
+            if (grouping[i].linked) tracksMoving[i] = true;
+            else break;
+        }
+    }
     for (let i = 0; i < grouping.length; i++) {
         const { id, linked } = grouping[i];
+        const isMoving = tracksMoving[i];
         if (i > 0 && !linked) groupIndex++;
         const trackProps = {
             ...props,
@@ -43,9 +58,18 @@ const ArrangementContainer: React.FunctionComponent<Props> = (props) => {
             pan: trackPans[id],
             linked,
             size: trackSize,
-            windowSize: newWindowSize
+            windowSize: newWindowSize,
+            setMovingTrack
         };
-        tracksContainers.push(<ArrangementTrackContainer {...trackProps} />);
+        const trackContainer = <ArrangementTrackContainer {...trackProps} />;
+        if (isMoving) {
+            movingTracks.push(trackContainer);
+        } else {
+            tracksContainers.push(trackContainer);
+        }
+    }
+    if (typeof movingTrack?.[1] === "number") {
+        tracksContainers.splice(movingTrack[1], 0, ...tracksMoving.filter(v => v).map(() => <div className={`track-move-target ${trackSize}`} />));
     }
     const handleResizeStartMouseDown = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
         if (!selectionOverlayRef.current || !selRange) return;
@@ -117,6 +141,7 @@ const ArrangementContainer: React.FunctionComponent<Props> = (props) => {
         <div id="arrangement-container" className="arrangement-container">
             <ArrangementRuler {...props} setTrackSize={setTrackSize} />
             <div className="tracks-containers">
+                {movingTracks.length ? <div className="moving-tracks-container" style={{ top: `${movingTrack?.[2]}px` }}>{movingTracks}</div> : null}
                 {tracksContainers}
             </div>
             <div className="selection-overlay" ref={selectionOverlayRef} style={{ width: `${scrollerSize}px` }}>
