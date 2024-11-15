@@ -1,5 +1,5 @@
 import "./ArrangementTrackContainer.scss";
-import { useCallback, useContext, useEffect, useRef, useState } from "react";
+import { useCallback, useContext, useEffect, useRef, useState, memo } from "react";
 import { AudioEditorContext } from "./contexts";
 import { VSCodeButton, VSCodeProgressRing } from "@vscode/webview-ui-toolkit/react";
 import GainInput from "./GainInput";
@@ -21,6 +21,9 @@ type Props = Pick<VisualizationStyleOptions, "gridRulerColor" | "gridColor" | "t
     mute: boolean;
     solo: boolean;
     pan: number;
+    hasLink: boolean;
+    linkStart: boolean;
+    linkEnd: boolean;
     linked: boolean;
     viewRange: [number, number];
     windowSize: number[];
@@ -28,15 +31,15 @@ type Props = Pick<VisualizationStyleOptions, "gridRulerColor" | "gridColor" | "t
 }
 
 const ArrangementTrackContainer: React.FunctionComponent<Props> = (props) => {
-    const { size = "medium", index, position, groupIndex, total, name, gain, mute, solo, pan, linked, viewRange, windowSize, setMovingTrack } = props;
-    const hue = groupIndex / Math.min(10, total) * 360 % 360;
+    const { size = "medium", index, position, groupIndex, total, name, gain, mute, solo, pan, linked, hasLink, linkStart, linkEnd, viewRange, windowSize, setMovingTrack } = props;
+    const hue = groupIndex / Math.min(7, total) * 360 * 7.5 / 7 % 360;
     const backgroundColor = `hsl(${~~(hue)}deg 50% 30% / 10%)`;
     const phosphorColor = `hsl(${~~(hue)}deg 50% 50%)`;
+    const borderLeftColor = `hsl(${~~(hue)}deg 50% 75%)`;
     const audioEditor = useContext(AudioEditorContext)!;
     const [dataSlice, setDataSlice] = useState<VectorDataSlice>();
     const [calculating, setCalculating] = useState(false);
     const [needRender, setNeedRender] = useState(false);
-    const [moving, setMoving] = useState(false);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const handleClickMute = useCallback(() => audioEditor.setMute(index, !mute), [audioEditor, index, mute]);
@@ -267,9 +270,13 @@ const ArrangementTrackContainer: React.FunctionComponent<Props> = (props) => {
     }, [paint, windowSize]);
     const panLeft = `${Math.min((pan + 1) * 0.5, 0.5) * 100}%`;
     const panWidth = `${Math.abs(pan) * 50}%`;
+    const controlsContainerStyle: React.CSSProperties = {};
+    if (hasLink) controlsContainerStyle.borderLeftColor = borderLeftColor;
+    if (linkStart) controlsContainerStyle.borderTopLeftRadius = "8px";
+    if (linkEnd) controlsContainerStyle.borderBottomLeftRadius = "8px";
     return (
-        <div style={{ backgroundColor }} className={`arrangement-track-container ${size}${moving ? " moving" : ""}${linked ? " linked" : ""}`} ref={containerRef}>
-            <div className="controls-container">
+        <div style={{ backgroundColor }} className={`arrangement-track-container ${size}${linked ? " linked" : ""}`} ref={containerRef}>
+            <div className="controls-container" style={controlsContainerStyle}>
                 <div className="name" title={name} onMouseDown={handleNameMouseDown}>
                     {linked ? null : <span className="codicon codicon-move"></span>}
                     <span>{name}</span>
