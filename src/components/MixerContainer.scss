@@ -1,0 +1,12 @@
+.mixer-container {
+    display: flex;
+    position: relative;
+    min-height: 300px;
+    flex-direction: row;
+    overflow: auto;
+    flex: 1 1 30%;
+
+    &[hidden] {
+        display: none;
+    }
+}

@@ -60,7 +60,7 @@ const App: React.FunctionComponent<Props> = ({ repositoryUrl = REPOSITORY_URL, a
             }
             const audioEditor = await AudioEditor.fromData(audioBuffers.map(ab => ab.getChannelData(0)), audioContext, quest);
             audioEditor.setState({
-                trackNames: files,
+                trackNames: files.map(n => n.replace(/\.[^.]+$/, "")),
                 trackPans,
                 trackGains,
                 ...(masterGain ? { masterGain: +masterGain || 0 } : {}),

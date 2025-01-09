@@ -3,6 +3,7 @@ import OperableAudioBuffer from "./OperableAudioBuffer";
 import AudioPlayer from "./AudioPlayer";
 import { dbtoa } from "../utils";
 import { AudioEditorConfiguration, AudioUnit, GroupingItem } from "../types";
+import { VectorDataSlice } from "./VectorImageProcessor";
 
 export type {
     AudioEditorConfiguration,
@@ -74,6 +75,7 @@ class AudioEditor extends TypedEventEmitter<AudioEditorEventMap> {
         masterGain: 0,
         grouping: []
     };
+    dataSlices: VectorDataSlice[] = [];
     get name() {
         return this._name;
     }

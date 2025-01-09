@@ -1,0 +1,162 @@
+.mixer-track-container {
+    flex: 0 0 100px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    gap: 8px;
+    overflow: hidden auto;
+    border-left: 1px var(--vscode-input-border) solid;
+
+    &:last-child {
+        border-right: 1px var(--vscode-input-border) solid;
+    }
+
+    & > .tracks-list {
+        flex: 0 0 80px;
+        display: flex;
+        flex-direction: column;
+        position: relative;
+        overflow: hidden auto;
+        width: 100px;
+        width: calc(100px - 10px);
+        margin: 5px;
+        border-radius: 5px;
+        background-color: rgb(0 0 0 / 20%);
+
+        & > .mixer-track-label-container {
+            position: relative;
+            display: flex;
+            background-color: rgb(255 255 255 / 20%);
+            border-radius: 4px;
+            margin: 2px;
+            overflow: hidden;
+            font-size: 10px;
+            flex: 0 0 auto;
+            & > .name {
+                position: relative;
+                flex: 0 1 auto;
+                overflow: hidden;
+                white-space: nowrap;
+                text-overflow: ellipsis;
+                margin: 2px 4px;
+
+            }
+
+            & .mute, & .solo {
+                display: none;
+            }
+
+            &:hover {
+                & > .name {
+                    margin-right: 28px;
+                }
+                & .mute, & .solo {
+                    display: flex;
+                }
+            }
+            & > .controls {
+                position: absolute;
+                width: 100%;
+                height: 100%;
+                gap: 2px;
+                display: flex;
+                
+                & > .pan {
+                    position: absolute;
+                    height: 2px;
+                    bottom: 0px;
+                    width: 100%;
+                    background-color: var(--vscode-panel-background);
+                    & > .pan-indicator {
+                        background-color: var(--vscode-editor-foreground);
+                        height: 100%;
+                        min-width: 1px;
+                        position: absolute;
+                    }
+                }
+
+                & .mute {
+                    margin: auto 0px auto auto;
+                }
+                & .solo {
+                    margin: auto 2px auto 0px;
+                }
+                & vscode-button {
+                    width: 10px;
+                    height: 10px;
+                }
+
+                & .linked > vscode-button {
+                    border: 1px var(--vscode-editorInfo-foreground) solid;
+                }
+                & .linked.active > vscode-button {
+                    background-color: var(--vscode-editorInfo-foreground);
+                }
+    
+                & .mute > vscode-button {
+                    border: 1px var(--vscode-editorError-foreground) solid;
+                }
+                & .mute.active > vscode-button {
+                    background-color: var(--vscode-editorError-foreground);
+                }
+    
+                & .solo > vscode-button {
+                    border: 1px var(--vscode-editorWarning-foreground) solid;
+                }
+                & .solo.active > vscode-button {
+                    background-color: var(--vscode-editorWarning-foreground);
+                }    
+            }
+        }
+    }
+
+    & > .meter-gain-container {
+        flex: 1 1 auto;
+        min-height: 30px;
+        display: flex;
+        position: relative;
+        flex-direction: column;
+
+        & > .meter {
+            width: 60px;
+            margin-left: 27.5px;
+            height: 100%;
+            position: relative;
+            display: flex;
+            flex: 0 0 100%;
+        }
+        & .gain-slider {
+            position: absolute;
+            display: block;
+            width: 40px;
+            height: 8px;
+            background-color: var(--vscode-minimapSlider-background);
+            border: 1px solid var(--vscode-editor-foreground);
+            border-radius: 4px;
+            cursor: grab;
+            margin-bottom: -5px;
+            margin-left: -6px;
+        }
+    }
+
+    & > .group-name {
+        display: flex;
+        flex-direction: column;
+        flex: 0 0 25px;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+
+        & > span {
+            flex: 0 1 auto;
+            margin: auto;
+            position: relative;
+            text-align: center;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+            width: 80%;
+        }
+    }
+}

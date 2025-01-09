@@ -9,6 +9,8 @@ type Props = Pick<VisualizationStyleOptions, "gridRulerColor" | "gridColor" | "t
     peakAnalyserNode: PeakAnalyserNode;
     gain?: number;
     showRuler?: boolean;
+    orientation?: "horizontal" | "vertical";
+    showGainController?: boolean;
     onGainChange?: (gain: number) => any;
     frameRate?: number;
     minDB?: number;
@@ -19,7 +21,8 @@ const FRAME_RATE = 60;
 const MIN_DB = -70;
 const MAX_DB = 6;
 
-const LevelMeter: React.FunctionComponent<Props> = ({ numberOfChannels, peakAnalyserNode, gain, showRuler = true, onGainChange, frameRate = FRAME_RATE, minDB = MIN_DB, maxDB = MAX_DB, windowSize, gridColor, gridRulerColor, textColor, monospaceFont }) => {
+const LevelMeter: React.FunctionComponent<Props> = (props) => {
+    const { numberOfChannels, peakAnalyserNode, orientation = "horizontal", gain, showGainController, showRuler = true, onGainChange, frameRate = FRAME_RATE, minDB = MIN_DB, maxDB = MAX_DB, windowSize, gridColor, gridRulerColor, textColor, monospaceFont } = props;
     const [values, setValues] = useState<number[]>([]);
     const [maxValues, setMaxValues] = useState<number[]>([]);
     const maxValuesRef = useRef<number[]>([]);
@@ -39,19 +42,35 @@ const LevelMeter: React.FunctionComponent<Props> = ({ numberOfChannels, peakAnal
         ctx.strokeStyle = gridRulerColor;
         ctx.fillStyle = textColor;
         ctx.font = `12px ${monospaceFont}`;
-        ctx.textAlign = "center";
-        ctx.textBaseline = "top";
-        ctx.fillText("dB", 10, 6);
-        ctx.beginPath();
-        let x: number;
-        for (let db = -60; db <= maxDB; db += (width > 250 ? 1 : width > 100 ? 3 : 12)) {
-            x = (db - minDB) / (maxDB - minDB) * width;
-            ctx.moveTo(x, 0);
-            ctx.lineTo(x, db % 6 === 0 ? 4 : 2);
-            if (db % (width > 250 ? 6 : width > 100 ? 12 : 36) === 0) ctx.fillText(db.toString(), x, 6);
+        if (orientation === "horizontal") {
+            ctx.textAlign = "center";
+            ctx.textBaseline = "top";
+            ctx.fillText("dB", 10, 6);
+            ctx.beginPath();
+            let x: number;
+            for (let db = -60; db <= maxDB; db += (width > 250 ? 1 : width > 100 ? 3 : 12)) {
+                x = (db - minDB) / (maxDB - minDB) * width;
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, db % 6 === 0 ? 4 : 2);
+                if (db % (width > 250 ? 6 : width > 100 ? 12 : 36) === 0) ctx.fillText(db.toString(), x, 6);
+            }
+            ctx.stroke();
+        } else {
+            ctx.textAlign = "left";
+            ctx.textBaseline = "bottom";
+            ctx.fillText("dB", 6, height);
+            ctx.textBaseline = "middle";
+            ctx.beginPath();
+            let y: number;
+            for (let db = -60; db <= maxDB; db += (height > 250 ? 1 : height > 100 ? 3 : 12)) {
+                y = height - (db - minDB) / (maxDB - minDB) * height;
+                ctx.moveTo(0, y);
+                ctx.lineTo(db % 6 === 0 ? 4 : 2, y);
+                if (db % (height > 250 ? 6 : height > 100 ? 12 : 36) === 0) ctx.fillText(db.toString(), 6, y);
+            }
+            ctx.stroke();
         }
-        ctx.stroke();
-    }, [gridRulerColor, maxDB, minDB, monospaceFont, showRuler, textColor]);
+    }, [gridRulerColor, maxDB, minDB, monospaceFont, orientation, showRuler, textColor]);
     const paint = useCallback(() => {
         const canvas = canvasMeterRef.current;
         const ctx = canvas?.getContext("2d");
@@ -61,10 +80,16 @@ const LevelMeter: React.FunctionComponent<Props> = ({ numberOfChannels, peakAnal
         const hotColor = "rgb(255, 193, 10)";
         const overloadColor = "rgb(255, 10, 10)";
 
-        const [width, height] = setCanvasToFullSize(canvas);
+        let [width, height] = setCanvasToFullSize(canvas);
 
         ctx.clearRect(0, 0, width, height);
         if (width <= 0 || height <= 0) return;
+        ctx.save();
+        if (orientation === "vertical") {
+            ctx.translate(0, height);
+            ctx.rotate(-Math.PI * 0.5);
+            [height, width] = [width, height];
+        }
         const channels = values.length;
         const clipValue = 0;
         const channelHeight = (height + 1) / channels - 1;
@@ -117,10 +142,11 @@ const LevelMeter: React.FunctionComponent<Props> = ({ numberOfChannels, peakAnal
                 }
                 y += channelHeight + 1;
             }
+            ctx.restore();
         }
         // if (audioEditor.state.playing === "playing") schedulePaint();
         // rafRef.current = requestAnimationFrame(scheduleUpdate);
-    }, [values, gridColor, minDB, maxDB, maxValues]);
+    }, [orientation, values, gridColor, minDB, maxDB, maxValues]);
     const scheduleUpdate = useCallback(async (time: number) => {
         if (time - previousRafTimeRef.current < 1000 / frameRate) {
             rafRef.current = requestAnimationFrame(scheduleUpdate);
@@ -151,7 +177,7 @@ const LevelMeter: React.FunctionComponent<Props> = ({ numberOfChannels, peakAnal
     useEffect(paint, [paint, windowSize]);
     useEffect(paintGrid, [showRuler, paintGrid, windowSize]);
     return (
-        <div className={`meter-container${showRuler ? " meter-container-show-ruler" : ""}`}>
+        <div className={`meter-container ${orientation}${showRuler ? " meter-container-show-ruler" : ""}`}>
             <canvas ref={canvasMeterRef} />
             {showRuler ? <canvas ref={canvasGridRef} /> : null}
         </div>

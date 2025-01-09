@@ -4,9 +4,7 @@ import ArrangementContainer from "./ArrangementContainer";
 import MixerContainer from "./MixerContainer";
 import PlayerContainer from "./PlayerContainer";
 import { AudioEditorContext } from "./contexts";
-import LevelMeter from "./LevelMeter";
 import { TrackSize } from "../types";
-import { VSCodeButton } from "@vscode/webview-ui-toolkit/react";
 import OutputContainer from "./OutputContainer";
 import AudioEditor from "../core/AudioEditor";
 
@@ -28,6 +26,7 @@ const AudioEditorContainer: React.FunctionComponent = () => {
     const [windowSize, setWindowSize] = useState([window.innerWidth, window.innerHeight]);
     const [trackSize, setTrackSize] = useState<TrackSize>("small");
     const [scrollerSize, setScrollerSize] = useState(windowSize[0] - 162);
+    const [showMixer, setShowMixer] = useState(false);
     const editorContainerRef = useRef<HTMLDivElement>(null);
     const phosphorColor = window.getComputedStyle(document.body).getPropertyValue("--vscode-menu-selectionBackground");
     const playheadColor = window.getComputedStyle(document.body).getPropertyValue("--vscode-minimap-findMatchHighlight");
@@ -125,8 +124,8 @@ const AudioEditorContainer: React.FunctionComponent = () => {
         <div id="audio-editor-container" className="audio-editor-container" ref={editorContainerRef}>
             <PlayerContainer {...componentProps} />
             <ArrangementContainer {...componentProps} />
-            <MixerContainer />
-            <OutputContainer {...componentProps} peakAnalyserNode={audioEditor.player!.masterPeakAnalyserNode} />
+            <MixerContainer {...componentProps} showMixer={showMixer} />
+            <OutputContainer {...componentProps} peakAnalyserNode={audioEditor.player!.masterPeakAnalyserNode} showMixer={showMixer} setShowMixer={setShowMixer}/>
         </div>
     );
 };

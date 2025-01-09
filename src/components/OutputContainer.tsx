@@ -18,10 +18,12 @@ type Props = Pick<AudioEditorState, "playing" | "playhead" | "loop" | "selRange"
     configuration: AudioEditorConfiguration;
     scrollerSize: number;
     windowSize: number[];
+    showMixer: boolean;
+    setShowMixer: React.Dispatch<React.SetStateAction<boolean>>;
 };
 
 const OutputContainer: React.FunctionComponent<Props> = (props) => {
-    const { masterGain } = props;
+    const { masterGain, showMixer, setShowMixer } = props;
     const audioEditor = useContext(AudioEditorContext)!;
     const aRef = useRef<HTMLAnchorElement>(null);
     const handleClickBounce = useCallback(async () => {
@@ -57,12 +59,14 @@ const OutputContainer: React.FunctionComponent<Props> = (props) => {
         audioEditor.setMasterGain(gain);
     }, [audioEditor]);
     const handleChangeGain = useCallback((gain: number) => audioEditor.setMasterGain(gain), [audioEditor]);
+    const handleClickMixer = useCallback(() => setShowMixer(show => !show), [setShowMixer]);
     return (
         <div className="output-container">
             <div className="output-controls">
+                <VSCodeButton onClick={handleClickMixer} appearance={showMixer ? "primary" : "secondary"}>Mixer</VSCodeButton>
                 <VSCodeButton onClick={handleClickBounce}>Bounce</VSCodeButton>
                 <VSCodeButton onClick={handleClickNormalize}>Normalize</VSCodeButton>
-                <span>Current Master Gain: </span>
+                <span style={{ width: '110px' }}>Current Master Gain: </span>
                 <GainInput gain={masterGain} unit="dB" onAdjust={handleChangeGain} onChange={handleChangeGain} />
                 <a hidden ref={aRef}></a>
             </div>

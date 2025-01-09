@@ -32,12 +32,12 @@ type Props = Pick<VisualizationStyleOptions, "gridRulerColor" | "gridColor" | "t
 
 const ArrangementTrackContainer: React.FunctionComponent<Props> = (props) => {
     const { size = "medium", index, position, groupIndex, total, name, gain, mute, solo, pan, linked, hasLink, linkStart, linkEnd, viewRange, windowSize, setMovingTrack } = props;
-    const hue = groupIndex / Math.min(7, total) * 360 * 7.5 / 7 % 360;
+    const hue = groupIndex / 7 * 360 * 7.5 / 7 % 360;
     const backgroundColor = `hsl(${~~(hue)}deg 50% 30% / 10%)`;
     const phosphorColor = `hsl(${~~(hue)}deg 50% 50%)`;
     const borderLeftColor = `hsl(${~~(hue)}deg 50% 75%)`;
     const audioEditor = useContext(AudioEditorContext)!;
-    const [dataSlice, setDataSlice] = useState<VectorDataSlice>();
+    const [dataSlice, setDataSlice] = useState<VectorDataSlice | undefined>(audioEditor.dataSlices[index]);
     const [calculating, setCalculating] = useState(false);
     const [needRender, setNeedRender] = useState(false);
     const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -255,6 +255,7 @@ const ArrangementTrackContainer: React.FunctionComponent<Props> = (props) => {
         document.addEventListener("mouseup", handleMouseUp);
     }, [audioEditor, linked, position, setMovingTrack]);
     useEffect(() => {
+        if (dataSlice) return;
         (async () => {
             setCalculating(true);
             const { timeDomainData, length } = audioEditor;
@@ -262,12 +263,12 @@ const ArrangementTrackContainer: React.FunctionComponent<Props> = (props) => {
             const vectors = [timeDomainData[index]];
             const ds = await worker.generateResized(vectors, { startIndex: 0, endIndex: length });
             setCalculating(false);
-            setDataSlice({ ...ds, vectors });
+            const dataSlice = { ...ds, vectors };
+            audioEditor.dataSlices[index] = dataSlice;
+            setDataSlice(dataSlice);
         })();
-    }, [audioEditor, index]);
-    useEffect(() => {
-        setTimeout(paint, 200, canvasRef);
-    }, [paint, windowSize]);
+    }, [audioEditor, dataSlice, index]);
+    useEffect(() => void setTimeout(paint, 200, canvasRef), [paint, windowSize]);
     const panLeft = `${Math.min((pan + 1) * 0.5, 0.5) * 100}%`;
     const panWidth = `${Math.abs(pan) * 50}%`;
     const controlsContainerStyle: React.CSSProperties = {};

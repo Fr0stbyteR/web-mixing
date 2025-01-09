@@ -14,13 +14,25 @@ div.meter-container {
         background-color: var(--vscode-panel-background);
     }
 
-    &.meter-container-show-ruler {
+    &.horizontal.meter-container-show-ruler {
         & > canvas:first-child {
             height: calc(100% - 20px);
             background-color: var(--vscode-panel-background);
         }
         & > canvas:last-child {
             height: 20px;
+            background-color: transparent;
+        }
+    }
+    &.vertical.meter-container-show-ruler {
+        display: flex;
+
+        & > canvas:first-child {
+            width: calc(100% - 30px);
+            background-color: var(--vscode-panel-background);
+        }
+        & > canvas:last-child {
+            width: 30px;
             background-color: transparent;
         }
     }

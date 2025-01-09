@@ -187,7 +187,7 @@ const ArrangementHorizontalScroller: React.FunctionComponent<Props> = ({ playhea
         document.addEventListener("mouseup", handleMouseUp);
     }, [audioEditor, selRange, viewRange]);
     const handleChangeTrackSize = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => setTrackSize(e.currentTarget.value as TrackSize), [setTrackSize]);
-    useEffect(paintVerticalRuler, [paintVerticalRuler, windowSize]);
+    useEffect(() => void setTimeout(paintVerticalRuler, 200), [paintVerticalRuler, windowSize]);
     const [viewStart, viewEnd] = viewRange;
     const [selStart, selEnd] = selRange || [0, 0];
     const selLeft = getCssFromPosition(viewRange, selStart);
